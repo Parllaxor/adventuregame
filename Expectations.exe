@@ -1,0 +1,24 @@
+There will be at least 60 total events
+Each event might have branching events, requiring their own code
+^ bridge of death (Event 12)
+^ build a shop event (trigger_shop())
+
+^ desert
+^ mountains
+
+is_valid_item() more stuff
+^ more combat_opponent
+
+* More player weapons, maximum 3 in inventory
+
+Castle scripted events
+Required key to enter castle (guarded by a powerful enemy)
+^ Depending on player level, max opponent level will rise or lower to balance (set enemy level possibilities to 1000)
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+No back-to-back events
+
+Enter gates (with key) -> Fight King's Guard -> Fight Evil King
+
+Evil King stats high minimum, scale with player level
+Name the evil king
