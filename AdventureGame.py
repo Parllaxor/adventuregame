@@ -2749,6 +2749,43 @@ Lost 15 HP!""")
         print("""In the works""")
         return
 
+def trigger_event13():
+        
+    repeat = True
+
+    while repeat == True:
+        print("""
+1. 
+2. 
+3. 
+4. Stats
+5. Inventory 
+""")
+        
+        choice_event13 = input()
+        
+        if int(choice_event13) == 1:
+            print()
+
+        elif int(choice_event13) == 2:
+            print()
+
+        elif int(choice_event13) == 3:
+            print()
+        
+        elif int(choice_event13) == 4:
+            print_stats()
+            repeat = True
+
+        elif int(choice_event13) == 5:
+            check_inventory()
+            repeat = True
+
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+
 # Dictionaries
 
 character_statistics = {
