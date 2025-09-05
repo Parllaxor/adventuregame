@@ -1,112 +1,100 @@
-import random
-def combat():
 
-    repeat = True
 
-    while repeat == True and enemy_stats["HP"] > 0:
-    
-        if(random.randint(1, 2) == 1):
-            while True:
-                print("""You manage to get a jump on the opponent what do you do?
-            
-1. Use a weapon
-2. Use an item
-3. Attempt to flee
-4. Inventory
-5. Stats
-6. Enemy Stats
-""")
+    #Sets enemy stats
+def trigger_battle(combat_opponent, enemy_level):
+    # Ensure Enemy isn't too powerful
+    if enemy_level == 0:
+        enemy_level = random.randint(.75 * character_statistics["Level"], 1.5 * character_statistics["Level"])
+    if enemy_level > math.ceil(1.5 * character_statistics["Level"]):
+        enemy_level = math.ceil(1.5 * character_statistics["Level"])
+    if enemy_level < math.ceil(.75 * character_statistics["Level"]):
+        enemy_level = math.ceil(.75 * character_statistics["Level"])
 
-                choice_attack = input()
+    # Hydra Battle
+    if combat_opponent.lower() == "hydra":
+        print(f"""You are in combat against a level {enemy_level} hydra.""")
+        enemy_stats["HP"] = 10 * enemy_level
+        enemy_stats["Strength"] = 5 * enemy_level
+        enemy_stats["Defense"] = 5 * enemy_level
+        enemy_stats["Speed"] = 5 * enemy_level
+        enemy_stats["Magic"] = 0
 
-                if int(choice_attack) == 1:
-                    choice_weapon = input(f"""Which weapon shall you use to strike?
-                    
-1. {weapon1}
-2. {weapon2}
-3. {weapon3}
-4. Back
-""")
         
 
-                
-                    if int(choice_weapon) == 1 or int(choice_weapon) == 2 or int(choice_weapon) == 3:
-                        is_valid_weapon(choice_weapon)
-                        break
-                    elif int (choice_weapon) == 4:
-                        continue  # Goes back to the start of the while loop
-                    else: 
-                        print("""Please choose a number between 1 and 4""")
-                        continue
+    # Goblin Battle
+    elif combat_opponent.lower() == "goblin":
+        print(f"""You are in combat against a level {enemy_level} goblin.""")
+        enemy_stats["HP"] =  5 * enemy_level
+        enemy_stats["Strength"] = 2 * enemy_level
+        enemy_stats["Defense"] = 1 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
+        enemy_stats["Magic"] = 0
+    # Ogre Battle
+    elif combat_opponent.lower() == "ogre":
+    
 
-                elif int(choice_attack) == 2:
-                    print("Which item would you like to use?\n")
-                    print("1. Back")
-                    item_lookup = {}
+        print(f"""You are in combat against a level {enemy_level} ogre.""")
+        enemy_stats["HP"] =  6 * enemy_level
+        enemy_stats["Strength"] = 3 * enemy_level
+        enemy_stats["Defense"] = 5 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
+        enemy_stats["Magic"] = 0
+    # Orc Battle
+    elif combat_opponent.lower() == "orc":
+        print(f"""You are in combat against a level {enemy_level} orc.""")
+        enemy_stats["HP"] =  10 * enemy_level
+        enemy_stats["Strength"] = 2 * enemy_level
+        enemy_stats["Defense"] = 5 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
+        enemy_stats["Magic"] = 0
 
-                    for item, amount in inventory.items():
-                        if amount > 0:
-                            print(f"{print_number}. {item}")
-                            item_lookup[print_number] = item
-                            print_number += 1
+    # Wizard Battle
+        print(f"""You are in combat against a level {enemy_level} wizard.""")
+        enemy_stats["HP"] =  5 * enemy_level
+        enemy_stats["Strength"] = 0
+        enemy_stats["Defense"] = 1 * enemy_level
+        enemy_stats["Speed"] = 3 * enemy_level
+        enemy_stats["Magic"] = 4 * enemy_level
 
-                    choice_item = input()
-                    if choice_item == 1:
-                        continue
-                    else:
-                        print("why am i here")
-                        is_valid_item(choice_item, item_lookup)
-                        return
+    # Golem Battle
 
-                elif int(choice_attack) == 3:
-                    print("""You attempted to flee.""")
-                    if random.randint(1, 85) < ((character_statistics["Speed"] * 5) - enemy_stats["Speed"] * 2):
-                        print("""You successfully escaped the fight!""")
-                        return
-                    else:
-                        print("""You tried to run away, but weren't quick enough. You were hit in the back.
-                        
-    Lost 5 HP!""")
-                        character_statistics["HP"] -= 5
-                        if enemy_stats["Strength"] >= enemy_stats["Magic"]:
-                            combat_defense("melee")
-                        elif enemy_stats["Strength"] < enemy_stats["Magic"]:
-                            combat_defense("magic")
-                        else:
-                            combat_defense("melee")
+        print(f"""You are in combat against a level {enemy_level} golem.""")
+        enemy_stats["HP"] =  6 * enemy_level
+        enemy_stats["Strength"] = 2 * enemy_level
+        enemy_stats["Defense"] = 8 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
+        enemy_stats["Magic"] = 0
 
-                elif int(choice_attack) == 4:
-                    check_inventory()
-                    repeat = True
+    # Bandit Battle
+    elif combat_opponent.lower() == "bandit":
 
-                elif int(choice_attack) == 5:
-                    print_stats()
-                    repeat = True
+        print(f"""You are in combat against a level {enemy_level} bandit.""")
+        enemy_stats["HP"] =  2 * enemy_level
+        enemy_stats["Strength"] = 3 * enemy_level
+        enemy_stats["Defense"] = 2 * enemy_level
+        enemy_stats["Speed"] = 6 * enemy_level
+        enemy_stats["Magic"] = 0
 
-                elif int(choice_attack) == 6:
-                    print_enemy_stats()
-                    repeat = True
+    # Dragon Battle
+    elif combat_opponent.lower() == "dragon":
+        print(f"""You are in combat against a level {enemy_level} dragon.""")
+        enemy_stats["HP"] =  12 * enemy_level
+        enemy_stats["Strength"] = 6 * enemy_level
+        enemy_stats["Defense"] = 8 * enemy_level
+        enemy_stats["Speed"] = 5 * enemy_level
+        enemy_stats["Magic"] = 5 * enemy_level
 
-                else:
-                    print("""Please enter a number between 1 and 6""")
-                    repeat = True
-        else:
-            print("""The enemy was quicker, and has attacked you!""")
-            if enemy_stats["Strength"] >= enemy_stats["Magic"]:
-                combat_defense("melee")
-            elif enemy_stats["Strength"] < enemy_stats["Magic"]:
-                combat_defense("magic")
-            else:
-                combat_defense("melee")
-    return
-weapon1 = "Rusty Sword"
-weapon2 = "Wooden Staff"
-weapon3 = "Dagger"
-enemy_stats = {
-    "HP": 1,
-    "Strength": 1,
-    "Defense": 1,
-    "Speed": 1,
-    "Magic": 1
-}
-combat()
+    elif combat_opponent.lower() == "troll":
+    # Troll Battle
+        print(f"""You are in combat against a level {enemy_level} troll.""")
+        enemy_stats["HP"] =  6 * enemy_level
+        enemy_stats["Strength"] = 8 * enemy_level
+        enemy_stats["Defense"] = 4 * enemy_level
+        enemy_stats["Speed"] = 2 * enemy_level
+        enemy_stats["Magic"] = 0
+
+    else:
+        print("ERROR: No valid enemy selected")
+        exit()
+
+

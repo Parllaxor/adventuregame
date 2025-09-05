@@ -1,0 +1,27 @@
+if int(choice_weapon) == 1 or int(choice_weapon) == 2 or int(choice_weapon) == 3:
+                strike = is_hit(weapon_hit[int(choice_weapon)])
+                if strike == True:
+                    damage = calculate_damage("melee", weapon_type[int(choice_weapon)])
+                    print(f"""You strike your foe, dealing {damage} damage!""")
+                    return
+                elif strike == False:
+                    print("""Your attack missed!""")
+                    if enemy_stats["Strength"] >= enemy_stats["Magic"]:
+                        combat_defense("melee")
+                    elif enemy_stats["Strength"] >= enemy_stats["Magic"]:
+                        combat_defense("magic")
+                    else:
+                        combat_defense("melee")
+                    return
+
+                fate = random.randint(1, 2)
+                if fate == 1:
+                    combat_attack()
+                    return
+                elif fate == 2:
+                    if enemy_stats["Magic"] > enemy_stats["Strength"]:
+                        combat_defense("magic")
+                    else:
+                        combat_defense("melee")
+                    return
+                break

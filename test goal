@@ -1,0 +1,23 @@
+Go into combat
+Your move or enemy move
+if your move choose
+    1. Use a weapon
+        pick between 3 weapons
+    2. Use an item
+        pick between items currently held
+    3. Attempt to flee
+        chance to succeed based on speed
+    4. Inventory
+        checks inventory
+    5. Stats
+        checks stat
+    6. Enemy Stats
+        checks enemy stat
+if enemy move it will fight wtih magic or melee
+    depends on which stat is higher but if close enough it will swap between the two
+    may change to enemies having different attacks
+repeat if enemy isnt dead
+
+Player>Enemy>Player>Enemy
+Player or Enemy based on speed
+Player or Enemy 50/50 chance
