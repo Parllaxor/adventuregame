@@ -177,7 +177,11 @@ def check_morale_HP():
     # Combat
 
 # Damage to enemy
-def calculate_damage(attack_type, weapon_damage):
+def calculate_damage(attack_type, weapon_damage, strike_chance):
+    if is_hit(strike_chance) == False:
+        print("""Your attack missed!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+        return
     if attack_type.lower() == "melee":
         damage_dealt = (character_statistics["Strength"] * weapon_damage) - enemy_stats["Defense"]
     elif attack_type.lower() == "magic":
@@ -249,17 +253,33 @@ def is_valid_item(choice, item_lookup):
 def is_valid_weapon(choice):
     # This function is to determine whether or not an item selected by the user to use can be used in combat
         if choice.lower() == "rusty sword":
-            damage = calculate_damage("melee", 1)
-            print(f"""You attack with your Rusty Sword dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.""")
+            damage = calculate_damage("melee", 2, 75)
+            if damage == None:
+                return
+            print(f"""You attack with your Rusty Sword dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
             return
         elif choice.lower() == "empty":
-            damage = calculate_damage("melee", 1)
-            print(f"""You attack with your fists dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.""")
+            damage = calculate_damage("melee", 1, 90)
+            if damage == None:
+                return
+            print(f"""You attack with your fists dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
             return
-            
-        elif choice.lower() == "rubber ducks":
-            print("Quack! Rubber ducks selected")
-            # Do rubber duck logic here
+        elif choice.lower() == "sturdy sword":
+            damage = calculate_damage("melee", 3, 75)
+            if damage == None:
+                return
+            print(f"""You attack with your Sturdy Sword dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+            return
+        elif choice.lower() == "wooden staff":
+            damage = calculate_damage("melee", 2, 60)
+            if damage == None:
+                return
+            print(f"""You attack with your Wooden Staff dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+            return
         else:
             print("GAME BUG")
             return
@@ -268,35 +288,7 @@ def is_valid_weapon(choice):
 
 
 
-def calculate_player_damage(is_blocking, attack_type):
-    # Enemy attacks with melee
-    if attack_type.lower() == "melee":
-        if is_blocking == True:
-            damage_dealt = enemy_stats["Strength"] - math.ceil(2 * character_statistics["Defense"])
-            if damage_dealt <= 0:
-                damage_dealt = 1
-        elif is_blocking == False:
-            damage_dealt = enemy_stats["Strength"] - math.ceil(character_statistics["Defense"])
-            if damage_dealt <= 0:
-                damage_dealt = 1
 
-    # Enemy attacks with magic
-    if attack_type.lower() == "magic":
-        if is_blocking == True:
-            damage_dealt = enemy_stats["Magic"] - math.ceil(2 * character_statistics["Magic"])
-            if damage_dealt <= 0:
-                damage_dealt = 1
-        elif is_blocking == False:
-            damage_dealt = enemy_stats["Magic"] - math.ceil(character_statistics["Magic"])
-            if damage_dealt <= 0:
-                damage_dealt = 1            
-    
-    if damage_dealt <= 0:
-        damage_dealt = 1
-
-    character_statistics["HP"] -= damage_dealt
-    does_game_end()
-    return damage_dealt
 
 def enemy_dead(combat_opponent, enemy_level):
     if combat_opponent.lower() == "hydra":
@@ -327,343 +319,115 @@ def enemy_dead(combat_opponent, enemy_level):
     else:
         return
 
-def trigger_battle(combat_opponent):
+    #Sets enemy stats
+def trigger_battle(combat_opponent, enemy_level):
+    # Ensure Enemy isn't too powerful
+    if enemy_level == 0:
+        enemy_level = random.randint(round(.75 * character_statistics["Level"]), round(1.5 * character_statistics["Level"]))
+    if enemy_level > math.ceil(round(1.5 * character_statistics["Level"])):
+        enemy_level = math.ceil(round(1.5 * character_statistics["Level"]))
+    if enemy_level < math.ceil(round(.75 * character_statistics["Level"])):
+        enemy_level = math.ceil(round(.75 * character_statistics["Level"]))
+
     # Hydra Battle
     if combat_opponent.lower() == "hydra":
-        hydra_level = random.randint(1, 1000)
-
-        # Ensure Hydra isn't too powerful
-        if hydra_level > math.ceil(1.5 * character_statistics["Level"]):
-            hydra_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Hydra isn't too weak
-        if hydra_level < math.ceil(.75 * character_statistics["Level"]):
-            hydra_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {hydra_level} hydra.""")
-        enemy_stats["HP"] = 10 * hydra_level
-        enemy_stats["Strength"] = 5 * hydra_level
-        enemy_stats["Defense"] = 5 * hydra_level
-        enemy_stats["Speed"] = 5 * hydra_level
+        print(f"""You are in combat against a level {enemy_level} hydra.""")
+        enemy_stats["HP"] = 10 * enemy_level
+        enemy_stats["Strength"] = 5 * enemy_level
+        enemy_stats["Defense"] = 5 * enemy_level
+        enemy_stats["Speed"] = 5 * enemy_level
         enemy_stats["Magic"] = 0
 
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, hydra_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, hydra_level)
-                break
-            elif fate == 2:
-                combat_defense("melee")
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, hydra_level)
-                break
+        
 
     # Goblin Battle
     elif combat_opponent.lower() == "goblin":
-        goblin_level = random.randint(1, 1000)
-
-        # Ensure Goblin isn't too powerful
-        if goblin_level > math.ceil(1.5 * character_statistics["Level"]):
-            goblin_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Goblin isn't too weak
-        if goblin_level < math.ceil(.75 * character_statistics["Level"]):
-            goblin_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {goblin_level} goblin.""")
-        enemy_stats["HP"] =  5 * goblin_level
-        enemy_stats["Strength"] = 2 * goblin_level
-        enemy_stats["Defense"] = 1 * goblin_level
-        enemy_stats["Speed"] = 1 * goblin_level
+        print(f"""You are in combat against a level {enemy_level} goblin.""")
+        enemy_stats["HP"] =  5 * enemy_level
+        enemy_stats["Strength"] = 2 * enemy_level
+        enemy_stats["Defense"] = 1 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
         enemy_stats["Magic"] = 0
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()  
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, goblin_level)
-                break
-            elif fate == 2:
-                combat_defense("melee")   
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, goblin_level)
-                break
-
     # Ogre Battle
     elif combat_opponent.lower() == "ogre":
-        ogre_level = random.randint(1, 1000)
+    
 
-        # Ensure Ogre isn't too powerful
-        if ogre_level > math.ceil(1.5 * character_statistics["Level"]):
-            ogre_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Ogre isn't too weak
-        if ogre_level < math.ceil(.75 * character_statistics["Level"]):
-            ogre_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {ogre_level} ogre.""")
-        enemy_stats["HP"] =  6 * ogre_level
-        enemy_stats["Strength"] = 3 * ogre_level
-        enemy_stats["Defense"] = 5 * ogre_level
-        enemy_stats["Speed"] = 1 * ogre_level
+        print(f"""You are in combat against a level {enemy_level} ogre.""")
+        enemy_stats["HP"] =  6 * enemy_level
+        enemy_stats["Strength"] = 3 * enemy_level
+        enemy_stats["Defense"] = 5 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
         enemy_stats["Magic"] = 0
-
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, ogre_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, ogre_level)
-                break
-            elif fate == 2:
-                combat_defense("melee")
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, ogre_level)
-                break
-
     # Orc Battle
     elif combat_opponent.lower() == "orc":
-        orc_level = random.randint(1, 1000)
-
-        # Ensure Orc isn't too powerful
-        if orc_level > math.ceil(1.5 * character_statistics["Level"]):
-            orc_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Orc isn't too weak
-        if orc_level < math.ceil(.75 * character_statistics["Level"]):
-            orc_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {orc_level} orc.""")
-        enemy_stats["HP"] =  10 * orc_level
-        enemy_stats["Strength"] = 2 * orc_level
-        enemy_stats["Defense"] = 5 * orc_level
-        enemy_stats["Speed"] = 1 * orc_level
+        print(f"""You are in combat against a level {enemy_level} orc.""")
+        enemy_stats["HP"] =  10 * enemy_level
+        enemy_stats["Strength"] = 2 * enemy_level
+        enemy_stats["Defense"] = 5 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
         enemy_stats["Magic"] = 0
-
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, orc_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, orc_level)
-                break
-            elif fate == 2:
-                combat_defense("melee")
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, orc_level)
-                break
 
     # Wizard Battle
-    elif combat_opponent.lower() == "wizard":
-        wizard_level = random.randint(1, 1000)
-
-        # Ensure Wizard isn't too powerful
-        if wizard_level > math.ceil(1.5 * character_statistics["Level"]):
-            wizard_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Wizard isn't too weak
-        if wizard_level < math.ceil(.75 * character_statistics["Level"]):
-            wizard_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {wizard_level} wizard.""")
-        enemy_stats["HP"] =  5 * wizard_level
+        print(f"""You are in combat against a level {enemy_level} wizard.""")
+        enemy_stats["HP"] =  5 * enemy_level
         enemy_stats["Strength"] = 0
-        enemy_stats["Defense"] = 1 * wizard_level
-        enemy_stats["Speed"] = 3 * wizard_level
-        enemy_stats["Magic"] = 4 * wizard_level
-
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, wizard_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, wizard_level)
-                break
-            elif fate == 2:
-                combat_defense("magic")
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, wizard_level)
-                break
+        enemy_stats["Defense"] = 1 * enemy_level
+        enemy_stats["Speed"] = 3 * enemy_level
+        enemy_stats["Magic"] = 4 * enemy_level
 
     # Golem Battle
-    elif combat_opponent.lower() == "golem":
-        golem_level = random.randint(1, 1000)
 
-        # Ensure Golem isn't too powerful
-        if golem_level > math.ceil(1.5 * character_statistics["Level"]):
-            golem_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Golem isn't too weak
-        if golem_level < math.ceil(.75 * character_statistics["Level"]):
-            golem_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {golem_level} golem.""")
-        enemy_stats["HP"] =  6 * golem_level
-        enemy_stats["Strength"] = 2 * golem_level
-        enemy_stats["Defense"] = 8 * golem_level
-        enemy_stats["Speed"] = 1 * golem_level
+        print(f"""You are in combat against a level {enemy_level} golem.""")
+        enemy_stats["HP"] =  6 * enemy_level
+        enemy_stats["Strength"] = 2 * enemy_level
+        enemy_stats["Defense"] = 8 * enemy_level
+        enemy_stats["Speed"] = 1 * enemy_level
         enemy_stats["Magic"] = 0
-
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, golem_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, golem_level)
-                break
-            elif fate == 2:
-                combat_defense("melee")
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, golem_level)
-                break
 
     # Bandit Battle
     elif combat_opponent.lower() == "bandit":
-        bandit_level = random.randint(1, 1000)
 
-        # Ensure Bandit isn't too powerful
-        if bandit_level > math.ceil(1.5 * character_statistics["Level"]):
-            bandit_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Bandit isn't too weak
-        if bandit_level < math.ceil(.75 * character_statistics["Level"]):
-            bandit_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {bandit_level} bandit.""")
-        enemy_stats["HP"] =  2 * bandit_level
-        enemy_stats["Strength"] = 3 * bandit_level
-        enemy_stats["Defense"] = 2 * bandit_level
-        enemy_stats["Speed"] = 6 * bandit_level
+        print(f"""You are in combat against a level {enemy_level} bandit.""")
+        enemy_stats["HP"] =  2 * enemy_level
+        enemy_stats["Strength"] = 3 * enemy_level
+        enemy_stats["Defense"] = 2 * enemy_level
+        enemy_stats["Speed"] = 6 * enemy_level
         enemy_stats["Magic"] = 0
-
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, bandit_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, bandit_level)
-                break
-            elif fate == 2:
-                combat_defense("melee")
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, bandit_level)
-                break
 
     # Dragon Battle
-    elif combat_opponent.lower() == "golem":
-        dragon_level = random.randint(1, 1000)
+    elif combat_opponent.lower() == "dragon":
+        print(f"""You are in combat against a level {enemy_level} dragon.""")
+        enemy_stats["HP"] =  12 * enemy_level
+        enemy_stats["Strength"] = 6 * enemy_level
+        enemy_stats["Defense"] = 8 * enemy_level
+        enemy_stats["Speed"] = 5 * enemy_level
+        enemy_stats["Magic"] = 5 * enemy_level
 
-        # Ensure Dragon isn't too powerful
-        if dragon_level > math.ceil(1.5 * character_statistics["Level"]):
-            dragon_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Dragon isn't too weak
-        if dragon_level < math.ceil(.75 * character_statistics["Level"]):
-            dragon_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {dragon_level} dragon.""")
-        enemy_stats["HP"] =  12 * dragon_level
-        enemy_stats["Strength"] = 6 * dragon_level
-        enemy_stats["Defense"] = 8 * dragon_level
-        enemy_stats["Speed"] = 5 * dragon_level
-        enemy_stats["Magic"] = 5 * dragon_level
-
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, dragon_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, dragon_level)
-                break
-            elif fate == 2:
-                if random.randint(1, 100) < 60:
-                    combat_defense("melee")
-                    if enemy_stats["HP"] <= 0:
-                        enemy_dead(combat_opponent, dragon_level)
-                    break
-                else:
-                    combat_defense("magic")
-                    if enemy_stats["HP"] <= 0:
-                        enemy_dead(combat_opponent, dragon_level)
-                    break
-
-    # Troll Battle
     elif combat_opponent.lower() == "troll":
-        troll_level = random.randint(1, 1000)
-
-        # Ensure Troll isn't too powerful
-        if troll_level > math.ceil(1.5 * character_statistics["Level"]):
-            troll_level = math.ceil(1.5 * character_statistics["Level"])
-
-        # Ensure Troll isn't too weak
-        if dragon_level < math.ceil(.75 * character_statistics["Level"]):
-            dragon_level = math.ceil(.75 * character_statistics["Level"])
-
-        print(f"""You are in combat against a level {troll_level} troll.""")
-        enemy_stats["HP"] =  6 * troll_level
-        enemy_stats["Strength"] = 8 * troll_level
-        enemy_stats["Defense"] = 4 * troll_level
-        enemy_stats["Speed"] = 2 * troll_level
+    # Troll Battle
+        print(f"""You are in combat against a level {enemy_level} troll.""")
+        enemy_stats["HP"] =  6 * enemy_level
+        enemy_stats["Strength"] = 8 * enemy_level
+        enemy_stats["Defense"] = 4 * enemy_level
+        enemy_stats["Speed"] = 2 * enemy_level
         enemy_stats["Magic"] = 0
 
-        if enemy_stats["HP"] <= 0:
-            enemy_dead(combat_opponent, troll_level)
-
-        while enemy_stats["HP"] > 0:
-            fate = random.randint(1, 2)
-            if fate == 1:
-                combat_attack()
-                if enemy_stats["HP"] <= 0:
-                    enemy_dead(combat_opponent, troll_level)
-                break
-            elif fate == 2:
-                if random.randint(1, 100) < 60:
-                    combat_defense("melee")
-                    if enemy_stats["HP"] <= 0:
-                        enemy_dead(combat_opponent, troll_level)
-                    break
-                else:
-                    combat_defense("magic")
-                    if enemy_stats["HP"] <= 0:
-                        enemy_dead(combat_opponent, troll_level)
-                    break
-
     else:
-        return
+        print("ERROR: No valid enemy selected")
+        exit()
+    combat_attack()
+    enemy_dead(combat_opponent, enemy_level)
+    return
+
     
 def combat_attack():
 
-    repeat = True
 
-    while repeat == True and enemy_stats["HP"] > 0:
+    while enemy_stats["HP"] > 0:
     
         if(random.randint(1, 2) == 1):
             while True:
-                print("""You manage to get a jump on the opponent what do you do?
+                choice_attack = input("""You manage to get a jump on the opponent what do you do?
             
 1. Use a weapon
 2. Use an item
@@ -671,10 +435,14 @@ def combat_attack():
 4. Inventory
 5. Stats
 6. Enemy Stats
-""")
-
-                choice_attack = input()
-
+>""")
+                print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+                try:
+                    choice_attack = int(choice_attack)
+                except ValueError:
+                    print("Please type a number between 1 and 6")
+                    print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+                    continue
                 if int(choice_attack) == 1:
                     choice_weapon = input(f"""Which weapon shall you use to strike?
                     
@@ -682,9 +450,13 @@ def combat_attack():
 2. {weapon2}
 3. {weapon3}
 4. Back
-""")
-        
-
+>""")
+                    print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+                    try:
+                        choice_weapon = int(choice_weapon)
+                    except ValueError:
+                        print("Please type a number between 1 and 4")
+                        continue
                 
                     if int(choice_weapon) == 1:
                         is_valid_weapon(weapon1)
@@ -714,6 +486,12 @@ def combat_attack():
                             print_number += 1
 
                     choice_item = input()
+                    try:
+                        choice_item = int(choice_item)
+                    except ValueError:
+                        print("Please type a number from the menu.")
+                        continue
+                    
                     if choice_item == 1:
                         continue
                     else:
@@ -739,45 +517,45 @@ def combat_attack():
 
                 elif int(choice_attack) == 4:
                     check_inventory()
-                    repeat = True
+                    continue
 
                 elif int(choice_attack) == 5:
                     print_stats()
-                    repeat = True
+                    continue
 
                 elif int(choice_attack) == 6:
                     print_enemy_stats()
-                    repeat = True
+                    continue
 
                 else:
                     print("""Please enter a number between 1 and 6""")
-                    repeat = True
+                    continue
         else:
-            print("""The enemy was quicker, and has attacked you!""")
             if enemy_stats["Strength"] >= enemy_stats["Magic"]:
                 combat_defense("melee")
             elif enemy_stats["Strength"] < enemy_stats["Magic"]:
                 combat_defense("magic")
             else:
                 combat_defense("melee")
+        
+
     return
 
 def combat_defense(attack_type):
 
-    repeat = True
+    while enemy_stats["HP"] > 0:
 
-    while repeat == True and enemy_stats["HP"] > 0:
-
-        print("""The opponent manages to get a jump on you, how do you protect yourself?
+        choice_defense = input("""The opponent manages to get a jump on you, how do you protect yourself?
             
 1. Block
 2. Dodge
 3. Attempt to flee
 4. Check Inventory
 5. Check Stats
-6. Check Enemy Stats""")
+6. Check Enemy Stats
+>""")
+        print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
 
-        choice_defense = input()
 
         if int(choice_defense) == 1:
             damage = calculate_player_damage(True, attack_type)
@@ -788,7 +566,8 @@ You are slain.""")
             elif damage >= 1:
                 print(f"""You manage to successfully block, but still suffer some damage.
                 
-Took {damage} damage!""")
+Took {damage} damage! You have {character_statistics["HP"]} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                 combat_attack()
             elif damage <= 0:
                 print("""You block the enemy's attacks, and suffer no damage.""")
@@ -802,7 +581,8 @@ Took {damage} damage!""")
                 damage = calculate_player_damage(False, attack_type)
                 print(f"""You attempt to dodge an oncoming attack, but were unable to get out of the way in time. You suffer some damage.
                       
-Took {damage} damage!""")
+Took {damage} damage! You have {character_statistics["HP"]} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                 combat_attack()
 
         elif int(choice_defense) == 3:
@@ -811,29 +591,71 @@ Took {damage} damage!""")
                 print("""You successfully escaped the fight!""")
                 return
             else:
-                print("""You tried to run away, but weren't quick enough. You were hit in the back.
+                damage = calculate_player_damage(False, attack_type)
+                print(f"""You tried to run away, but weren't quick enough. The enemy hits you in the back.
                       
-Lost 5 HP!""")
-                character_statistics["HP"] -= 5
+Took {damage} damage! You have {character_statistics["HP"]} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                 combat_defense(attack_type)
 
         elif int(choice_defense) == 4:
             check_inventory()
-            repeat = True
+            continue
 
         elif int(choice_defense) == 5:
             print_stats()
-            repeat = True
+            continue
 
         elif int(choice_defense) == 6:
             print_enemy_stats()
-            repeat = True
+            continue
 
         else:
             print("""Please enter a number between 1 and 6""")
-            repeat = True
+            continue
 
     return
+
+def calculate_player_damage(is_blocking, attack_type):
+    # Enemy attacks with melee
+    if is_hit(100 - 10*character_statistics["Speed"]) == False:
+        print("""The enemy attack missed!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+        return
+    if attack_type.lower() == "melee":
+        if is_blocking == True:
+            damage_dealt = enemy_stats["Strength"] - math.ceil(2 * character_statistics["Defense"])
+            if damage_dealt <= 0:
+                damage_dealt = 1
+        elif is_blocking == False:
+            damage_dealt = enemy_stats["Strength"] - math.ceil(character_statistics["Defense"])
+            if damage_dealt <= 0:
+                damage_dealt = 1
+
+    # Enemy attacks with magic
+    if attack_type.lower() == "magic":
+        if is_blocking == True:
+            damage_dealt = enemy_stats["Magic"] - math.ceil(2 * character_statistics["Magic"])
+            if damage_dealt <= 0:
+                damage_dealt = 1
+        elif is_blocking == False:
+            damage_dealt = enemy_stats["Magic"] - math.ceil(character_statistics["Magic"])
+            if damage_dealt <= 0:
+                damage_dealt = 1            
+    
+    if damage_dealt <= 0:
+        damage_dealt = 1
+
+    character_statistics["HP"] -= damage_dealt
+    does_game_end()
+    return damage_dealt
+
+
+
+
+
+
+
 
 #Template for building events
 def trigger_event_0():
@@ -1311,7 +1133,7 @@ You leave safely... For now.
                 if random.randint(1, 100) < 40:
                     print("""You quietly open the door. The pirates must be on break, nobody is around... 
     You leave safely... For now.
-    """)
+""")
                     teleport_random_biome()
                     return
                 
@@ -2563,7 +2385,7 @@ def trigger_event10_1():
     3. Ignore the monster
     4. Stats
     5. Inventory 
-    """)
+""")
         choice_event10 = input()
 
         if int(choice_event10) == 1:
@@ -2809,7 +2631,7 @@ sell_price = {
 }
 
 list_of_classes = ["1. Warrior", "2. Mage", "3. Defender"]
-weapon1 = "Rusty Sword"
+weapon1 = "Empty"
 weapon2 = "Empty"
 weapon3 = "Empty"
 # Game Start
@@ -2825,50 +2647,57 @@ we do receive is taxed.
 
 Say, you appear to be a noble warrior, and therefore we would petition your help.
 What kind of warrior are you, new friend?
-      
 """)
 print_choices(list_of_classes)
 
-chosen_class = input()
-chosen_class = int(chosen_class)
-repeat = True
 
-while repeat == True:
+
+while True:
+    chosen_class = input().strip()
+    try:
+        chosen_class = int(chosen_class)
+    except ValueError:
+        print("That's not a number. Please enter 1, 2, or 3.")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        continue
+    chosen_class = int(chosen_class)
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     if chosen_class == 1:
         print("""Ah, a warrior! Strong with the sword, mighty with the bow!
 Truly the fighter we always desired! We believe in you warrior,
 we know you can set us free from the tyrannical king NAME
             
-You begin the game with 10 Strength
-""")
+You begin the game with 10 Strength and a Sturdy Sword""")
         character_statistics["Strength"] += 10
-        repeat = False
+        weapon1 = "Sturdy Sword"
+        break
     elif chosen_class == 2:
         print("""Ah, a mage! A mind like a tempest, and a desire burning like fire!
 Truly the fighter we always desired! We believe in you mage,
 we know you can set us free from the tyrannical king NAME
             
-You begin the game with 10 Magic
-""")
+You begin the game with 10 Magic, a Wooden Staff, and a simple Wind Spell""")
         character_statistics["Magic"] += 10
-        repeat = False
+        weapon1 = "Wooden Staff"
+        break
     elif chosen_class == 3:
         print("""Ah, a defender! Hard like a rock, impenetrable, and ready to protect at all costs!
 Truly the fighter we always desired! We believe in you defender,
 we know you can set us free from the tyrannical king NAME
             
-You begin the game with 10 Defense
-""")
+You begin the game with 10 Defense and a Rusty Sword""")
         character_statistics["Defense"] += 10
-        repeat = False
+        weapon1 = "Rusty Sword"
+        break
     else:
         print("Please type a 1, 2, or 3 to choose your class.")
-        repeat = True
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        continue
 
 # Gameplay Loop
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-trigger_battle("goblin")
+trigger_battle("goblin", 0)
 does_game_end()
 level_up()
 
