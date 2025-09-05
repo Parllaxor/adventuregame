@@ -6,6 +6,10 @@ import sys
 import math
 import time
 
+
+
+
+
 def print_choices(choice_list):
     print(choice_list[0])
     print(choice_list[1])
@@ -193,9 +197,6 @@ def calculate_damage(attack_type, weapon_damage):
         print("Critical hit!")
         enemy_stats["HP"] -= (2*damage_dealt)
         return 2*(damage_dealt)
-    elif is_crit == False:
-        enemy_stats["HP"] -= damage_dealt
-        return damage_dealt
     else:
         enemy_stats["HP"] -= damage_dealt
         return damage_dealt
@@ -245,6 +246,27 @@ def is_valid_item(choice, item_lookup):
     else:
         print("Invalid choice — number not in menu.")
 
+def is_valid_weapon(choice):
+    # This function is to determine whether or not an item selected by the user to use can be used in combat
+        if choice.lower() == "rusty sword":
+            damage = calculate_damage("melee", 1)
+            print(f"""You attack with your Rusty Sword dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.""")
+            return
+        elif choice.lower() == "empty":
+            damage = calculate_damage("melee", 1)
+            print(f"""You attack with your fists dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.""")
+            return
+            
+        elif choice.lower() == "rubber ducks":
+            print("Quack! Rubber ducks selected")
+            # Do rubber duck logic here
+        else:
+            print("GAME BUG")
+            return
+
+
+
+
 
 def calculate_player_damage(is_blocking, attack_type):
     # Enemy attacks with melee
@@ -282,7 +304,7 @@ def enemy_dead(combat_opponent, enemy_level):
         character_statistics["XP"] += xp
         print(f"""Gained {xp} XP""")
     elif combat_opponent.lower() == "goblin":
-        xp = enemy_level * math.ceil(random.randint(1.5, 3))
+        xp = enemy_level * math.ceil(random.randint(1, 3))
         character_statistics["XP"] += xp
         print(f"""Gained {xp} XP""")
     elif combat_opponent.lower() == "ogre":
@@ -638,9 +660,12 @@ def combat_attack():
     repeat = True
 
     while repeat == True and enemy_stats["HP"] > 0:
-        print("""You manage to get a jump on the opponent, and get the first move, what do you do?
+    
+        if(random.randint(1, 2) == 1):
+            while True:
+                print("""You manage to get a jump on the opponent what do you do?
             
-1. Strike
+1. Use a weapon
 2. Use an item
 3. Attempt to flee
 4. Inventory
@@ -648,115 +673,93 @@ def combat_attack():
 6. Enemy Stats
 """)
 
-        choice_attack = input()
+                choice_attack = input()
 
-        if int(choice_attack) == 1:
-            choice_weapon = input("""Which weapon shall you use to strike?
-                  
-1. Sword (1 Power, 95% Hit Chance)
-2. Axe (3 Power, 65% Hit Chance)
-3. Hammer (10 Power, 30% Hit Chance)
+                if int(choice_attack) == 1:
+                    choice_weapon = input(f"""Which weapon shall you use to strike?
+                    
+1. {weapon1}
+2. {weapon2}
+3. {weapon3}
 4. Back
 """)
-            weapon_type = {
-                1: 1, #sword
-                2: 3, #axe
-                3: 10 #hammer
-            }
-            weapon_hit = {
-                1: 95, #sword
-                2: 65, #axe
-                3: 30 #hammer
-            }
+        
 
-            if int(choice_weapon) == 1 or int(choice_weapon) == 2 or int(choice_weapon) == 3:
-                strike = is_hit(weapon_hit[int(choice_weapon)])
-                if strike == True:
-                    damage = calculate_damage("melee", weapon_type[int(choice_weapon)])
-                    print(f"""You strike your foe, dealing {damage} damage!""")
-                    return
-                elif strike == False:
-                    print("""Your attack missed!""")
-                    if enemy_stats["Strength"] >= enemy_stats["Magic"]:
-                        combat_defense("melee")
-                    elif enemy_stats["Strength"] >= enemy_stats["Magic"]:
-                        combat_defense("magic")
+                
+                    if int(choice_weapon) == 1:
+                        is_valid_weapon(weapon1)
+                        break
+                    elif int(choice_weapon) == 2:
+                        is_valid_weapon(weapon2)
+                        break
+                    elif int(choice_weapon) == 3:
+                        is_valid_weapon(weapon3)
+                        break
+                    elif int (choice_weapon) == 4:
+                        continue  # Goes back to the start of the while loop
+                    else: 
+                        print("""Please choose a number between 1 and 4""")
+                        continue
+
+                elif int(choice_attack) == 2:
+                    print("Which item would you like to use?\n")
+                    print("1. Back")
+                    item_lookup = {}
+                    print_number = 2
+
+                    for item, amount in inventory.items():
+                        if amount > 0:
+                            print(f"{print_number}. {item}")
+                            item_lookup[print_number] = item
+                            print_number += 1
+
+                    choice_item = input()
+                    if choice_item == 1:
+                        continue
                     else:
-                        combat_defense("melee")
-                    return
+                        is_valid_item(choice_item, item_lookup)
+                        return
 
-                fate = random.randint(1, 2)
-                if fate == 1:
-                    combat_attack()
-                    return
-                elif fate == 2:
-                    if enemy_stats["Strength"] >= enemy_stats["Magic"]:
-                        combat_defense("melee")
-                    elif enemy_stats["Strength"] >= enemy_stats["Magic"]:
-                        combat_defense("magic")
+                elif int(choice_attack) == 3:
+                    print("""You attempted to flee.""")
+                    if random.randint(1, 85) < ((character_statistics["Speed"] * 5) - enemy_stats["Speed"] * 2):
+                        print("""You successfully escaped the fight!""")
+                        return
                     else:
-                        combat_defense("melee")
-                    return
-                break
+                        print("""You tried to run away, but weren't quick enough. You were hit in the back.
+                        
+    Lost 5 HP!""")
+                        character_statistics["HP"] -= 5
+                        if enemy_stats["Strength"] >= enemy_stats["Magic"]:
+                            combat_defense("melee")
+                        elif enemy_stats["Strength"] < enemy_stats["Magic"]:
+                            combat_defense("magic")
+                        else:
+                            combat_defense("melee")
 
-            elif int (choice_weapon) == 4:
-                combat_attack()
-            else: 
-                print("""Please choose a number between 1 and 4""")
+                elif int(choice_attack) == 4:
+                    check_inventory()
+                    repeat = True
 
-        elif int(choice_attack) == 2:
-            print("Which item would you like to use?\n")
-            print("1. Back")
+                elif int(choice_attack) == 5:
+                    print_stats()
+                    repeat = True
 
-            print_number = 2
-            item_lookup = {}
+                elif int(choice_attack) == 6:
+                    print_enemy_stats()
+                    repeat = True
 
-            for item, amount in inventory.items():
-                if amount > 0:
-                    print(f"{print_number}. {item}")
-                    item_lookup[print_number] = item
-                    print_number += 1
-
-            choice_item = input()
-            if choice_item == 1:
-                return
-            else:
-                is_valid_item(choice_item, item_lookup)
-                return
-
-        elif int(choice_attack) == 3:
-            print("""You attempted to flee.""")
-            if random.randint(1, 85) < ((character_statistics["Speed"] * 5) - enemy_stats["Speed"] * 2):
-                print("""You successfully escaped the fight!""")
-                return
-            else:
-                print("""You tried to run away, but weren't quick enough. You were hit in the back.
-                      
-Lost 5 HP!""")
-                character_statistics["HP"] -= 5
-                if enemy_stats["Strength"] >= enemy_stats["Magic"]:
-                    combat_defense("melee")
-                elif enemy_stats["Strength"] < enemy_stats["Magic"]:
-                    combat_defense("magic")
                 else:
-                    combat_defense("melee")
-
-        elif int(choice_attack) == 4:
-            check_inventory()
-            repeat = True
-
-        elif int(choice_attack) == 5:
-            print_stats()
-            repeat = True
-
-        elif int(choice_attack) == 6:
-            print_enemy_stats()
-            repeat = True
-
+                    print("""Please enter a number between 1 and 6""")
+                    repeat = True
         else:
-            print("""Please enter a number between 1 and 6""")
-            repeat = True
-    
+            print("""The enemy was quicker, and has attacked you!""")
+            if enemy_stats["Strength"] >= enemy_stats["Magic"]:
+                combat_defense("melee")
+            elif enemy_stats["Strength"] < enemy_stats["Magic"]:
+                combat_defense("magic")
+            else:
+                combat_defense("melee")
     return
 
 def combat_defense(attack_type):
@@ -2843,7 +2846,9 @@ sell_price = {
 }
 
 list_of_classes = ["1. Warrior", "2. Mage", "3. Defender"]
-
+weapon1 = "Rusty Sword"
+weapon2 = "Empty"
+weapon3 = "Empty"
 # Game Start
 print("""To play, type in the number of the option you would like to choose.
       
@@ -2900,7 +2905,7 @@ You begin the game with 10 Defense
 # Gameplay Loop
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-trigger_event1()
+trigger_battle("goblin")
 does_game_end()
 level_up()
 
