@@ -6,10 +6,6 @@ import sys
 import math
 import time
 
-
-
-
-
 def print_choices(choice_list):
     print(choice_list[0])
     print(choice_list[1])
@@ -183,11 +179,13 @@ def calculate_damage(attack_type, weapon_damage, strike_chance):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
         return
     if attack_type.lower() == "melee":
-        damage_dealt = (character_statistics["Strength"] * weapon_damage) - enemy_stats["Defense"]
+        damage_dealt = ((character_statistics["Strength"] * 0.25) * weapon_damage) - enemy_stats["Defense"]
     elif attack_type.lower() == "magic":
-        damage_dealt = (character_statistics["Magic"] * 2) - 2 - enemy_stats["Defense"]
+        damage_dealt = ((character_statistics["Magic"] * 0.25) - enemy_stats["Magic"])
     elif attack_type.lower() == "throw":
-        damage_dealt = (character_statistics["Strength"] * weapon_damage) - enemy_stats["Defense"]
+        damage_dealt = ((character_statistics["Strength"] * 0.5) * weapon_damage) - enemy_stats["Defense"]
+    elif attack_type.lower() == "range":
+        damage_dealt = ((character_statistics["Speed"] * 0.5) * weapon_damage) - enemy_stats["Defense"]
     elif damage_dealt <= 0:
         damage_dealt = 1
     else:
@@ -200,10 +198,10 @@ def calculate_damage(attack_type, weapon_damage, strike_chance):
     if is_crit == True:
         print("Critical hit!")
         enemy_stats["HP"] -= (2*damage_dealt)
-        return 2*(damage_dealt)
+        return math.ceil(2*(damage_dealt))
     else:
         enemy_stats["HP"] -= damage_dealt
-        return damage_dealt
+        return math.ceil(damage_dealt)
 
 def is_critical_hit():
     if random.randint(1, 100) <= critical_chance:
@@ -251,43 +249,44 @@ def is_valid_item(choice, item_lookup):
         print("Invalid choice — number not in menu.")
 
 def is_valid_weapon(choice):
-    # This function is to determine whether or not an item selected by the user to use can be used in combat
-        if choice.lower() == "rusty sword":
-            damage = calculate_damage("melee", 2, 75)
-            if damage == None:
-                return
-            print(f"""You attack with your Rusty Sword dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
+    choice = choice.strip().title()
+
+    # Handle fists if slot is empty
+    if choice.lower() == "empty":
+        weapon_stats = {"type": "melee", "damage": random.randint(1, 3), "hit_chance": 90, "name": "Fists", "special_power": "none"}
+    else:
+        weapon_stats = weapons.get(choice)
+        if not weapon_stats:
+            print("Invalid weapon! (GAME BUG)")
+            return
+
+    # Calculate damage
+    damage = calculate_damage(
+        weapon_stats["type"],
+        weapon_stats["damage"],
+        weapon_stats["hit_chance"]
+    )
+    if damage is None:
+        return
+
+    # Print attack message
+    if enemy_stats["HP"] >= 0:
+        print(f"""You attack with your {choice} dealing {damage} damage. 
+The enemy has {enemy_stats['HP']} HP left.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
-            return
-        elif choice.lower() == "empty":
-            damage = calculate_damage("melee", 1, 90)
-            if damage == None:
-                return
-            print(f"""You attack with your fists dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
+    else:
+        print(f"""You attack with your {choice} dealing {damage} damage. 
+The enemy has been slain.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
-            return
-        elif choice.lower() == "sturdy sword":
-            damage = calculate_damage("melee", 3, 75)
-            if damage == None:
-                return
-            print(f"""You attack with your Sturdy Sword dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
-            return
-        elif choice.lower() == "wooden staff":
-            damage = calculate_damage("melee", 2, 60)
-            if damage == None:
-                return
-            print(f"""You attack with your Wooden Staff dealing {damage} damage. The enemy has {enemy_stats["HP"]} HP left.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
-            return
-        else:
-            print("GAME BUG")
-            return
 
+    # Handle special power (if any)
+    if weapon_stats.get("special_power") and weapon_stats["special_power"] != "none":
+        print(f"The {choice} unleashes its special power: {weapon_stats['special_power'].capitalize()}!")
+        weapon_special_power(weapon_stats['special_power'].lower())
 
-
-
-
+def weapon_special_power(power):
+    if power == "fire":
+        print("""The enemy is burning.""")
 
 
 def enemy_dead(combat_opponent, enemy_level):
@@ -319,15 +318,21 @@ def enemy_dead(combat_opponent, enemy_level):
     else:
         return
 
-    #Sets enemy stats
+    # Set enemy stats
 def trigger_battle(combat_opponent, enemy_level):
     # Ensure Enemy isn't too powerful
+    enemy_level = random.randint(1, 1000)
+    for i in range(20):
+        new_level = random.randint(1, 1000)
+        if enemy_level > new_level:
+            enemy_level = new_level
+
     if enemy_level == 0:
-        enemy_level = random.randint(round(.75 * character_statistics["Level"]), round(1.5 * character_statistics["Level"]))
-    if enemy_level > math.ceil(round(1.5 * character_statistics["Level"])):
-        enemy_level = math.ceil(round(1.5 * character_statistics["Level"]))
-    if enemy_level < math.ceil(round(.75 * character_statistics["Level"])):
-        enemy_level = math.ceil(round(.75 * character_statistics["Level"]))
+        enemy_level = random.randint(.75 * character_statistics["Level"]), math.ceil(1.5 * character_statistics["Level"])
+    if enemy_level > math.ceil(1.5 * character_statistics["Level"]):
+        enemy_level = math.ceil(1.5 * character_statistics["Level"])
+    if enemy_level < math.ceil(.75 * character_statistics["Level"]):
+        enemy_level = math.ceil(.75 * character_statistics["Level"])
 
     # Hydra Battle
     if combat_opponent.lower() == "hydra":
@@ -338,8 +343,6 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Speed"] = 5 * enemy_level
         enemy_stats["Magic"] = 0
 
-        
-
     # Goblin Battle
     elif combat_opponent.lower() == "goblin":
         print(f"""You are in combat against a level {enemy_level} goblin.""")
@@ -348,16 +351,16 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Defense"] = 1 * enemy_level
         enemy_stats["Speed"] = 1 * enemy_level
         enemy_stats["Magic"] = 0
+
     # Ogre Battle
     elif combat_opponent.lower() == "ogre":
-    
-
         print(f"""You are in combat against a level {enemy_level} ogre.""")
         enemy_stats["HP"] =  6 * enemy_level
         enemy_stats["Strength"] = 3 * enemy_level
         enemy_stats["Defense"] = 5 * enemy_level
         enemy_stats["Speed"] = 1 * enemy_level
         enemy_stats["Magic"] = 0
+
     # Orc Battle
     elif combat_opponent.lower() == "orc":
         print(f"""You are in combat against a level {enemy_level} orc.""")
@@ -376,7 +379,6 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Magic"] = 4 * enemy_level
 
     # Golem Battle
-
         print(f"""You are in combat against a level {enemy_level} golem.""")
         enemy_stats["HP"] =  6 * enemy_level
         enemy_stats["Strength"] = 2 * enemy_level
@@ -425,9 +427,9 @@ def combat_attack():
 
     while enemy_stats["HP"] > 0:
     
-        if(random.randint(1, 2) == 1):
+        if(random.randint(1, 100) < 90):
             while True:
-                choice_attack = input("""You manage to get a jump on the opponent what do you do?
+                choice_attack = input("""You manage to get a jump on the opponent, what do you do?
             
 1. Use a weapon
 2. Use an item
@@ -446,9 +448,9 @@ def combat_attack():
                 if int(choice_attack) == 1:
                     choice_weapon = input(f"""Which weapon shall you use to strike?
                     
-1. {weapon1}
-2. {weapon2}
-3. {weapon3}
+1. {player_weapons[0]}
+2. {player_weapons[1]}
+3. {player_weapons[2]}
 4. Back
 >""")
                     print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
@@ -459,13 +461,13 @@ def combat_attack():
                         continue
                 
                     if int(choice_weapon) == 1:
-                        is_valid_weapon(weapon1)
+                        is_valid_weapon(player_weapons[0])
                         break
                     elif int(choice_weapon) == 2:
-                        is_valid_weapon(weapon2)
+                        is_valid_weapon(player_weapons[1])
                         break
                     elif int(choice_weapon) == 3:
-                        is_valid_weapon(weapon3)
+                        is_valid_weapon(player_weapons[2])
                         break
                     elif int (choice_weapon) == 4:
                         continue  # Goes back to the start of the while loop
@@ -569,6 +571,7 @@ You are slain.""")
 Took {damage} damage! You have {character_statistics["HP"]} HP left.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                 combat_attack()
+
             elif damage <= 0:
                 print("""You block the enemy's attacks, and suffer no damage.""")
                 combat_attack()
@@ -581,7 +584,7 @@ Took {damage} damage! You have {character_statistics["HP"]} HP left.
                 damage = calculate_player_damage(False, attack_type)
                 print(f"""You attempt to dodge an oncoming attack, but were unable to get out of the way in time. You suffer some damage.
                       
-Took {damage} damage! You have {character_statistics["HP"]} HP left.
+Took {damage} damage! You have {character_statistics["HP"]} HP remaining.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                 combat_attack()
 
@@ -594,7 +597,7 @@ Took {damage} damage! You have {character_statistics["HP"]} HP left.
                 damage = calculate_player_damage(False, attack_type)
                 print(f"""You tried to run away, but weren't quick enough. The enemy hits you in the back.
                       
-Took {damage} damage! You have {character_statistics["HP"]} HP left.
+Took {damage} damage! You have {character_statistics["HP"]} HP remaining.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                 combat_defense(attack_type)
 
@@ -650,13 +653,55 @@ def calculate_player_damage(is_blocking, attack_type):
     does_game_end()
     return damage_dealt
 
+import random
 
+def show_weapon(name, stats):
+    print(f"""Weapon Get!
+{name} | {stats['rarity']}
+{stats['damage']} Damage
+{stats['hit_chance']} Hit chance
+{stats['type']} Weapon
+""")
 
+def weapon_get():
+    # Get weapon names and their drop rates
+    weapon_names = list(weapons.keys())
+    drop_rates = [weapons[w]["drop_rate"] for w in weapon_names]
 
+    # Randomly choose a weapon based on weighted drop chance
+    weapon_name = random.choices(weapon_names, weights=drop_rates, k=1)[0]
+    stats = weapons[weapon_name]
 
+    # If player has empty slots, auto-assign
+    if "Empty" in player_weapons:
+        slot = player_weapons.index("Empty")
+        player_weapons[slot] = weapon_name
+        show_weapon(weapon_name, stats)
+        return
 
+    # Otherwise, ask the player if they want to replace something
+    show_weapon(weapon_name, stats)
+    take_or_leave = input(f"""You found a {weapon_name}, a {stats['rarity']} weapon!
+1. Take
+2. Leave
+""")
 
+    if take_or_leave == "1":
+        # Show weapons to replace
+        for i, w in enumerate(player_weapons, 1):
+            print(f"{i}. {w}")
+        leave_weapon = input("Which weapon would you like to leave behind?: ")
 
+        if leave_weapon in {"1", "2", "3"}:
+            idx = int(leave_weapon) - 1
+            print(f"You chose to leave your {player_weapons[idx]} behind.")
+            player_weapons[idx] = weapon_name
+        else:
+            print("Invalid choice, weapon left behind.")
+    else:
+        print("You left the weapon behind.")
+
+        
 #Template for building events
 def trigger_event_0():
     repeat = True
@@ -2667,10 +2712,27 @@ sell_price = {
     "Gold": 3
 }
 
+# Weapons List
+weapons = {
+    # Legendary Weapons
+    "Reaper of the Gods": {"rarity": "Legendary", "damage": random.randint(80, 95), "hit_chance": 90, "type": "Melee", "drop_rate": 1, "special_power": "blind"},
+    "Sun Blade": {"rarity": "Legendary", "damage": random.randint(50, 60), "hit_chance": 80, "type": "Melee", "drop_rate": 5, "special_power": "fire"},
+    # Insane Weapons
+    "Blood Blade": {"rarity": "Insane", "damage": random.randint(30, 50), "hit_chance": 80, "type": "Melee", "drop_rate": 60, "special_power": "bleed"},
+    # Rare Weapons
+    "Bright Blade": {"rarity": "Rare", "damage": random.randint(20, 25), "hit_chance": 75, "type": "Melee", "drop_rate": 150, "special_power": "blind"},
+    # Uncommon Weapons
+    "Frozen Blade": {"rarity": "Uncommon", "damage": random.randint(17, 23), "hit_chance": 60, "type": "Melee", "drop_rate": 130, "special_power": "ice"},
+    # Common Weapons
+    "Iron Sword": {"rarity": "Common", "damage": random.randint(10, 20), "hit_chance": 60, "type": "Melee", "drop_rate": 200, "special_power": "none"},
+    "Sturdy Sword": {"rarity": "Common", "damage": random.randint(7, 15), "hit_chance": 70, "type": "Melee", "drop_rate": 200, "special_power": "none"},
+    "Rusty Sword": {"rarity": "Common", "damage": random.randint(5, 10), "hit_chance": 70, "type": "Melee", "drop_rate": 200, "special_power": "none"},
+}
+
 list_of_classes = ["1. Warrior", "2. Mage", "3. Defender"]
-weapon1 = "Empty"
-weapon2 = "Empty"
-weapon3 = "Empty"
+# Player starts with 3 slots
+player_weapons = ["Empty", "Empty", "Empty"]
+
 # Game Start
 print("""To play, type in the number of the option you would like to choose.
       
@@ -2706,7 +2768,7 @@ we know you can set us free from the tyrannical king NAME
             
 You begin the game with 10 Strength and a Sturdy Sword""")
         character_statistics["Strength"] += 10
-        weapon1 = "Sturdy Sword"
+        player_weapons[0] = "Sturdy Sword"
         break
     elif chosen_class == 2:
         print("""Ah, a mage! A mind like a tempest, and a desire burning like fire!
@@ -2715,7 +2777,7 @@ we know you can set us free from the tyrannical king NAME
             
 You begin the game with 10 Magic, a Wooden Staff, and a simple Wind Spell""")
         character_statistics["Magic"] += 10
-        weapon1 = "Wooden Staff"
+        player_weapons[0] = "Sturdy Sword"
         break
     elif chosen_class == 3:
         print("""Ah, a defender! Hard like a rock, impenetrable, and ready to protect at all costs!
@@ -2724,7 +2786,7 @@ we know you can set us free from the tyrannical king NAME
             
 You begin the game with 10 Defense and a Rusty Sword""")
         character_statistics["Defense"] += 10
-        weapon1 = "Rusty Sword"
+        player_weapons[0] = "Rusty Sword"
         break
     else:
         print("Please type a 1, 2, or 3 to choose your class.")
