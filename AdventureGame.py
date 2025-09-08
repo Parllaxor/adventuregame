@@ -16,6 +16,7 @@ def print_choices(choice_list):
 # Pre-enabled Conditions and Stats
 
 max_HP = 20
+max_Mana = 20
 critical_chance = 15
 is_Victorious = False
 is_On_Water = False
@@ -181,18 +182,18 @@ def calculate_damage(attack_type, weapon_damage, strike_chance):
     if attack_type.lower() == "melee":
         damage_dealt = ((character_statistics["Strength"] * 0.25) * weapon_damage) - enemy_stats["Defense"]
     elif attack_type.lower() == "magic":
-        damage_dealt = ((character_statistics["Magic"] * 0.25) - enemy_stats["Magic"])
+        damage_dealt = ((character_statistics["Magic"] * 0.5) * weapon_damage) - enemy_stats["Magic"]
     elif attack_type.lower() == "throw":
         damage_dealt = ((character_statistics["Strength"] * 0.5) * weapon_damage) - enemy_stats["Defense"]
-    elif attack_type.lower() == "range":
-        damage_dealt = ((character_statistics["Speed"] * 0.5) * weapon_damage) - enemy_stats["Defense"]
+    elif attack_type.lower() == "ranged":
+        damage_dealt = ((character_statistics["Dexterity"] * 3) * weapon_damage) - enemy_stats["Defense"]
     elif damage_dealt <= 0:
         damage_dealt = 1
     else:
         return
 
-    if damage_dealt <= 0:
-        damage_dealt = 1
+    if damage_dealt < weapon_damage:
+        damage_dealt = weapon_damage
 
     is_crit = is_critical_hit()
     if is_crit == True:
@@ -200,7 +201,7 @@ def calculate_damage(attack_type, weapon_damage, strike_chance):
         enemy_stats["HP"] -= (2*damage_dealt)
         return math.ceil(2*(damage_dealt))
     else:
-        enemy_stats["HP"] -= damage_dealt
+        enemy_stats["HP"] -= math.ceil(damage_dealt)
         return math.ceil(damage_dealt)
 
 def is_critical_hit():
@@ -235,31 +236,25 @@ def is_valid_item(choice, item_lookup):
         elif item.lower() == "gold":
             # Throw gold at enemy
             if random.randint(1, 100) < character_statistics["Speed"] * (character_statistics["Strength"] + character_statistics["Magic"]):
-                damage = calculate_damage("throw", random.randint(1, 10))
+                damage = calculate_damage("throw", random.randint(1, 10), 1)
                 print(f"""You chuck a piece of gold at the enemy, dealing {damage} damage""")
                 enemy_stats["HP"] -= damage
-                return
             else:
                 print("""You throw the gold at the enemy, but you completely miss.""")
-                return
         elif item.lower() == "rubber ducks":
             print("Quack! Rubber ducks selected")
             # Do rubber duck logic here
     else:
         print("Invalid choice — number not in menu.")
-        return
+    return
 
 def is_valid_weapon(choice):
     choice = choice.strip().title()
 
-    # Handle fists if slot is empty
-    if choice.lower() == "empty":
-        weapon_stats = {"type": "melee", "damage": random.randint(1, 3), "hit_chance": 90, "name": "Fists", "special_power": "none"}
-    else:
-        weapon_stats = weapons.get(choice)
-        if not weapon_stats:
-            print("Invalid weapon! (GAME BUG)")
-            return
+    weapon_stats = weapons.get(choice)
+    if not weapon_stats:
+        print("Invalid weapon! (GAME BUG)")
+        return
 
     # Calculate damage
     damage = calculate_damage(
@@ -295,10 +290,7 @@ def is_valid_spell(choice):
         return
 
     # Calculate damage
-    damage = calculate_damage(
-        spell_stats["damage"],
-        spell_stats["hit_chance"]
-    )
+    damage = calculate_damage("magic",spell_stats["damage"],spell_stats["hit_chance"])
     if damage is None:
         return
 
@@ -481,11 +473,26 @@ def combat_attack():
                     print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                     continue
                 if int(choice_attack) == 1:
+                    weapon_stats1 = weapons.get(player_weapons[0])
+                    weapon_stats2 = weapons.get(player_weapons[1])
+                    weapon_stats3 = weapons.get(player_weapons[2])
+                    if "none" not in weapon_stats1["special_power"]:
+                        special1 = weapon_stats1["special_power"]
+                    else:
+                        special1 = ""
+                    if "none" not in weapon_stats2["special_power"]:
+                        special2 = weapon_stats2["special_power"]
+                    else:
+                        special2 = ""
+                    if "none" not in weapon_stats3["special_power"]:
+                        special3 = weapon_stats3["special_power"]
+                    else:
+                        special3 = ""
                     choice_weapon = input(f"""Which weapon shall you use to strike?
                     
-1. {player_weapons[0]}
-2. {player_weapons[1]}
-3. {player_weapons[2]}
+1. {player_weapons[0]}: {weapon_stats1["damage"]} Strenth, {weapon_stats1["hit_chance"]} Hit Chance, {special1}
+2. {player_weapons[1]}: {weapon_stats2["damage"]} Strenth, {weapon_stats2["hit_chance"]} Hit Chance, {special2}
+3. {player_weapons[2]}: {weapon_stats3["damage"]} Strenth, {weapon_stats3["hit_chance"]} Hit Chance, {special3}
 4. Back
 >""")
                     print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
@@ -516,26 +523,24 @@ def combat_attack():
                     item_lookup = {}
                     print_number = 2
 
-                    for item, amount in current_spells.items():
+                    for spell, amount in current_spells.items():
                         if amount > 0:
-                            print(f"{print_number}. {item}")
-                            item_lookup[print_number] = item
+                            print(f"{print_number}. {spell}")
+                            item_lookup[print_number] = spell
                             print_number += 1
 
-                    choice_item = input()
+                    choice_spell = input()
                     try:
-                        choice_item = int(choice_item)
+                        choice_spell = int(choice_spell)
                     except ValueError:
                         print("Please type a number from the menu.")
                         continue
                     
-                    if choice_item == 1:
+                    if choice_spell == 1:
                         continue
                     else:
-                        is_valid_spell(choice_item, item_lookup)
-                        return
-                    
-
+                        is_valid_spell(item_lookup[choice_spell])
+                        break
                 elif int(choice_attack) == 3:
                     print("Which item would you like to use?\n")
                     print("1. Back")
@@ -559,8 +564,7 @@ def combat_attack():
                         continue
                     else:
                         is_valid_item(choice_item, item_lookup)
-                        return
-
+                        break
                 elif int(choice_attack) == 4:
                     print("""You attempted to flee.""")
                     if random.randint(1, 85) < ((character_statistics["Speed"] * 5) - enemy_stats["Speed"] * 2):
@@ -600,8 +604,6 @@ def combat_attack():
                 combat_defense("magic")
             else:
                 combat_defense("melee")
-        
-
     return
 
 def combat_defense(attack_type):
@@ -734,8 +736,8 @@ def weapon_get():
     stats = weapons[weapon_name]
 
     # If player has empty slots, auto-assign
-    if "Empty" in player_weapons:
-        slot = player_weapons.index("Empty")
+    if "Fist" in player_weapons:
+        slot = player_weapons.index("Fist")
         player_weapons[slot] = weapon_name
         show_weapon(weapon_name, stats)
         return
@@ -1400,8 +1402,9 @@ def trigger_shop():
     repeat = True
 
     while repeat:
-        print("""You come across a vendor during your travels. 
+        print(f"""You come across a vendor during your travels. 
 \"I've got wares, why don't you take a look?\" He suspiciously says.
+You've got {inventory['Money']} money
 1. Purchase
 2. Sell
 3. Leave
@@ -2716,17 +2719,19 @@ def trigger_event13():
             print("""Please type a number between 1 and 5.""")
             repeat = True
 
-
 # Dictionaries
 
 character_statistics = {
     "HP": 20,
+    "Mana": 20,
     "Energy": 100,
     "Morale": 100,
     "Strength": 0,
     "Defense": 0,
     "Magic": 0,
     "Speed": 0,
+    "Dexterity": 0,
+    "Intellect": 0,
     "Swim": 0,
     "XP": 0,
     "Level": 1
@@ -2893,6 +2898,10 @@ weapons = {
     "Worn Sword": {"rarity": "Common", "damage": random.randint(6, 12), "hit_chance": 70, "type": "Melee", "drop_rate": 95, "special_power": "none"},
     "Stone Spear": {"rarity": "Common", "damage": random.randint(5, 11), "hit_chance": 65, "type": "Melee", "drop_rate": 95, "special_power": "none"},
     "Simple Club": {"rarity": "Common", "damage": random.randint(4, 9), "hit_chance": 70, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+
+    #---------------- Empty Weapon (1) ----------------
+
+    "Fist": {"rarity": "None", "damage": 3, "hit_chance": 70, "type": "Melee", "drop_rate": 0, "special_power": "none"}
 }
 
 spells = {
@@ -2904,7 +2913,7 @@ current_spells = {}
 
 list_of_classes = ["1. Warrior", "2. Mage", "3. Defender"]
 # Player starts with 3 slots
-player_weapons = ["Empty", "Empty", "Empty"]
+player_weapons = ["Fist", "Fist", "Fist"]
 
 # Game Start
 print("""To play, type in the number of the option you would like to choose.
@@ -2942,6 +2951,7 @@ we know you can set us free from the tyrannical king NAME
 You begin the game with 10 Strength and a Sturdy Sword""")
         character_statistics["Strength"] += 10
         player_weapons[0] = "Sturdy Sword"
+        player_weapons[1] = "Sun Blade"
         break
     elif chosen_class == 2:
         print("""Ah, a mage! A mind like a tempest, and a desire burning like fire!
@@ -2949,6 +2959,8 @@ Truly the fighter we always desired! We believe in you mage,
 we know you can set us free from the tyrannical king NAME
             
 You begin the game with 10 Magic, a Sturdy Sword, and a simple Wind Spell""")
+        max_Mana == 30
+        character_statistics["Mana"] = max_Mana
         character_statistics["Magic"] += 10
         current_spells["Wind Spell"] = 1
         player_weapons[0] = "Wooden Staff"
