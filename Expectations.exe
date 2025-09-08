@@ -3,9 +3,6 @@ Each event might have branching events, requiring their own code
 ^ bridge of death (Event 12)
 ^ build a shop event (trigger_shop())
 
-^ desert
-^ mountains
-
 is_valid_item() more stuff
 ^ more combat_opponent
 
