@@ -247,6 +247,7 @@ def is_valid_item(choice, item_lookup):
             # Do rubber duck logic here
     else:
         print("Invalid choice — number not in menu.")
+        return
 
 def is_valid_weapon(choice):
     choice = choice.strip().title()
@@ -282,9 +283,42 @@ The enemy has been slain.
     # Handle special power (if any)
     if weapon_stats.get("special_power") and weapon_stats["special_power"] != "none":
         print(f"The {choice} unleashes its special power: {weapon_stats['special_power'].capitalize()}!")
-        weapon_special_power(weapon_stats['special_power'].lower())
+        special_power(weapon_stats['special_power'].lower())
 
-def weapon_special_power(power):
+
+def is_valid_spell(choice):
+    choice = choice.strip().title()
+
+    spell_stats = spells.get(choice)
+    if not spell_stats:
+        print("Invalid weapon! (GAME BUG)")
+        return
+
+    # Calculate damage
+    damage = calculate_damage(
+        spell_stats["damage"],
+        spell_stats["hit_chance"]
+    )
+    if damage is None:
+        return
+
+    # Print attack message
+    if enemy_stats["HP"] >= 0:
+        print(f"""You attack with your {choice} dealing {damage} damage. 
+The enemy has {enemy_stats['HP']} HP left.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+    else:
+        print(f"""You attack with your {choice} dealing {damage} damage. 
+The enemy has been slain.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
+
+    # Handle special power (if any)
+    if spell_stats.get("special_power") and spell_stats["special_power"] != "none":
+        print(f"The {choice} unleashes its special power: {spell_stats['special_power'].capitalize()}!")
+        special_power(spell_stats['special_power'].lower())
+
+
+def special_power(power):
     if power == "fire":
         print("""The enemy is burning.""")
 
@@ -432,11 +466,12 @@ def combat_attack():
                 choice_attack = input("""You manage to get a jump on the opponent, what do you do?
             
 1. Use a weapon
-2. Use an item
-3. Attempt to flee
-4. Inventory
-5. Stats
-6. Enemy Stats
+2. Use a spell                                      
+3. Use an item
+4. Attempt to flee
+5. Inventory
+6. Stats
+7. Enemy Stats
 >""")
                 print("""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~""")
                 try:
@@ -476,6 +511,32 @@ def combat_attack():
                         continue
 
                 elif int(choice_attack) == 2:
+                    print("Which Spell would you like to use?\n")
+                    print("1. Back")
+                    item_lookup = {}
+                    print_number = 2
+
+                    for item, amount in current_spells.items():
+                        if amount > 0:
+                            print(f"{print_number}. {item}")
+                            item_lookup[print_number] = item
+                            print_number += 1
+
+                    choice_item = input()
+                    try:
+                        choice_item = int(choice_item)
+                    except ValueError:
+                        print("Please type a number from the menu.")
+                        continue
+                    
+                    if choice_item == 1:
+                        continue
+                    else:
+                        is_valid_spell(choice_item, item_lookup)
+                        return
+                    
+
+                elif int(choice_attack) == 3:
                     print("Which item would you like to use?\n")
                     print("1. Back")
                     item_lookup = {}
@@ -500,7 +561,7 @@ def combat_attack():
                         is_valid_item(choice_item, item_lookup)
                         return
 
-                elif int(choice_attack) == 3:
+                elif int(choice_attack) == 4:
                     print("""You attempted to flee.""")
                     if random.randint(1, 85) < ((character_statistics["Speed"] * 5) - enemy_stats["Speed"] * 2):
                         print("""You successfully escaped the fight!""")
@@ -517,15 +578,15 @@ def combat_attack():
                         else:
                             combat_defense("melee")
 
-                elif int(choice_attack) == 4:
+                elif int(choice_attack) == 5:
                     check_inventory()
                     continue
 
-                elif int(choice_attack) == 5:
+                elif int(choice_attack) == 6:
                     print_stats()
                     continue
 
-                elif int(choice_attack) == 6:
+                elif int(choice_attack) == 7:
                     print_enemy_stats()
                     continue
 
@@ -2834,7 +2895,12 @@ weapons = {
     "Simple Club": {"rarity": "Common", "damage": random.randint(4, 9), "hit_chance": 70, "type": "Melee", "drop_rate": 100, "special_power": "none"},
 }
 
-
+spells = {
+    "Wind Spell": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "none"},
+    "Ice Blast": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "none"},
+    "Lightning Bolt": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "none"},
+}
+current_spells = {}
 
 list_of_classes = ["1. Warrior", "2. Mage", "3. Defender"]
 # Player starts with 3 slots
@@ -2882,8 +2948,9 @@ You begin the game with 10 Strength and a Sturdy Sword""")
 Truly the fighter we always desired! We believe in you mage,
 we know you can set us free from the tyrannical king NAME
             
-You begin the game with 10 Magic, a Wooden Staff, and a simple Wind Spell""")
+You begin the game with 10 Magic, a Sturdy Sword, and a simple Wind Spell""")
         character_statistics["Magic"] += 10
+        current_spells["Wind Spell"] = 1
         player_weapons[0] = "Wooden Staff"
         break
     elif chosen_class == 3:
