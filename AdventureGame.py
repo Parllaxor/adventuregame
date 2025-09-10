@@ -45,12 +45,16 @@ def level_up():
 
     # Keep leveling up if enough XP
     while character_statistics["XP"] >= character_statistics["Level"] * math.ceil(10 * character_statistics["Level"]):
+        OldHP = max_HP
         OldLevel = character_statistics["Level"]
         OldStrength = character_statistics["Strength"]
         OldMagic = character_statistics["Magic"]
         OldDefense = character_statistics["Defense"]
         OldSwim = character_statistics["Swim"]
         OldSpeed = character_statistics["Speed"]
+        OldMana = max_Mana
+        OldDexterity = character_statistics["Dexterity"]
+        OldIntellect = character_statistics["Intellect"]
 
         # Spend XP & level up first
         required_XP = character_statistics["Level"] * math.ceil(10 * character_statistics["Level"])
@@ -61,12 +65,19 @@ def level_up():
         character_statistics[preferred_stat] += random.randint(1, math.ceil(character_statistics[preferred_stat] * 0.25))
 
         # Bonus stats depending on level
+        if character_statistics["Level"] % 1 == 0:
+            max_Mana += random.randint(1, math.ceil(character_statistics["Level"] * 0.5))
+            max_HP += random.randint(1, 2)
+            character_statistics["Mana"] = max_Mana
+            character_statistics["HP"] = max_HP
         if character_statistics["Level"] % 2 == 0:
             character_statistics["Strength"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.75))
             character_statistics["Speed"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.5))
+            character_statistics["Dexterity"] += random.randint(1, math.ceil(character_statistics["Level" * 0.5]))
         if character_statistics["Level"] % 3 == 0:
             character_statistics["Magic"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.75))
             character_statistics["Swim"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.5))
+            character_statistics["Intellect"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.75))
         if character_statistics["Level"] % 5 == 0:
             character_statistics["Defense"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.75))
 
@@ -84,11 +95,15 @@ def level_up():
         print(f"""
         LEVEL UP!
    Level: {OldLevel} ---> {character_statistics["Level"]}
+   HP: {OldHP} ---> {max_HP}
+   Mana: {OldMana} ---> {max_Mana}
 Strength: {OldStrength} ---> {character_statistics["Strength"]}
  Defense: {OldDefense} ---> {character_statistics["Defense"]}
    Magic: {OldMagic} ---> {character_statistics["Magic"]}
    Speed: {OldSpeed} ---> {character_statistics["Speed"]}
-    Swim: {OldSwim} ---> {character_statistics["Swim"]}""")
+    Swim: {OldSwim} ---> {character_statistics["Swim"]}
+    Dexterity: {OldDexterity} ---> {character_statistics["Dexterity"]}
+    Intellect: {OldIntellect} ---> {character_statistics["Intellect"]}""")
 
 def does_game_end():
     # check if game ends
@@ -2788,23 +2803,23 @@ weapons = {
 
     "Reaper of the Gods": {"rarity": "Legendary", "damage": random.randint(80, 95), "hit_chance": 90, "type": "Melee", "drop_rate": 1, "special_power": "blind"},
     "Sun Blade": {"rarity": "Legendary", "damage": random.randint(50, 60), "hit_chance": 80, "type": "Melee", "drop_rate": 5, "special_power": "fire"},
-    "Eternal Spear": {"rarity": "Legendary", "damage": random.randint(70, 85), "hit_chance": 85, "type": "Melee", "drop_rate": 3, "special_power": "lightning"},
+    "Eternal Spear": {"rarity": "Legendary", "damage": random.randint(70, 85), "hit_chance": 85, "type": "Melee", "drop_rate": 3, "special_power": "shock"},
     "Dragon Fang": {"rarity": "Legendary", "damage": random.randint(85, 100), "hit_chance": 75, "type": "Melee", "drop_rate": 2, "special_power": "poison"},
-    "Frostmourne": {"rarity": "Legendary", "damage": random.randint(80, 95), "hit_chance": 70, "type": "Melee", "drop_rate": 2, "special_power": "frost"},
-    "Celestial Bow": {"rarity": "Legendary", "damage": random.randint(60, 80), "hit_chance": 95, "type": "Ranged", "drop_rate": 4, "special_power": "pierce"},
+    "Frostmourne": {"rarity": "Legendary", "damage": random.randint(80, 95), "hit_chance": 70, "type": "Melee", "drop_rate": 2, "special_power": "ice"},
+    "Celestial Bow": {"rarity": "Legendary", "damage": random.randint(60, 80), "hit_chance": 95, "type": "Ranged", "drop_rate": 4, "special_power": "blind"},
     "Hammer of Titans": {"rarity": "Legendary", "damage": random.randint(90, 110), "hit_chance": 65, "type": "Melee", "drop_rate": 1, "special_power": "stun"},
-    "Shadow Scythe": {"rarity": "Legendary", "damage": random.randint(75, 95), "hit_chance": 80, "type": "Melee", "drop_rate": 3, "special_power": "shadow"},
-    "Phoenix Staff": {"rarity": "Legendary", "damage": random.randint(55, 70), "hit_chance": 85, "type": "Magic", "drop_rate": 5, "special_power": "revive"},
-    "Blade of Eternity": {"rarity": "Legendary", "damage": random.randint(95, 120), "hit_chance": 85, "type": "Melee", "drop_rate": 1, "special_power": "time_stop"},
+    "Shadow Scythe": {"rarity": "Legendary", "damage": random.randint(75, 95), "hit_chance": 80, "type": "Melee", "drop_rate": 3, "special_power": "curse"},
+    "Phoenix Staff": {"rarity": "Legendary", "damage": random.randint(55, 70), "hit_chance": 85, "type": "Magic", "drop_rate": 5, "special_power": "burn"},
+    "Blade of Eternity": {"rarity": "Legendary", "damage": random.randint(95, 120), "hit_chance": 85, "type": "Melee", "drop_rate": 1, "special_power": "stun"},
     "Orb of Infinity": {"rarity": "Legendary", "damage": random.randint(70, 90), "hit_chance": 90, "type": "Magic", "drop_rate": 2, "special_power": "invisibility"},
     "Lance of Light": {"rarity": "Legendary", "damage": random.randint(75, 95), "hit_chance": 88, "type": "Melee", "drop_rate": 3, "special_power": "holy"},
     "Thunderstorm Bow": {"rarity": "Legendary", "damage": random.randint(80, 100), "hit_chance": 85, "type": "Ranged", "drop_rate": 2, "special_power": "shock"},
-    "Crownbreaker Axe": {"rarity": "Legendary", "damage": random.randint(100, 120), "hit_chance": 70, "type": "Melee", "drop_rate": 1, "special_power": "crush"},
+    "Crownbreaker Axe": {"rarity": "Legendary", "damage": random.randint(100, 120), "hit_chance": 70, "type": "Melee", "drop_rate": 1, "special_power": "none"},
     "Serpent Fang Dagger": {"rarity": "Legendary", "damage": random.randint(65, 80), "hit_chance": 95, "type": "Melee", "drop_rate": 4, "special_power": "poison"},
-    "Volcanic Blade": {"rarity": "Legendary", "damage": random.randint(85, 105), "hit_chance": 80, "type": "Melee", "drop_rate": 3, "special_power": "lava"},
+    "Volcanic Blade": {"rarity": "Legendary", "damage": random.randint(85, 105), "hit_chance": 80, "type": "Melee", "drop_rate": 3, "special_power": "fire"},
     "Scepter of Stars": {"rarity": "Legendary", "damage": random.randint(60, 75), "hit_chance": 90, "type": "Magic", "drop_rate": 4, "special_power": "meteor"},
-    "Wraith Scythe": {"rarity": "Legendary", "damage": random.randint(90, 105), "hit_chance": 78, "type": "Melee", "drop_rate": 2, "special_power": "soul_drain"},
-    "Heaven’s Wrath": {"rarity": "Legendary", "damage": random.randint(100, 125), "hit_chance": 85, "type": "Melee", "drop_rate": 1, "special_power": "smite"},
+    "Wraith Scythe": {"rarity": "Legendary", "damage": random.randint(90, 105), "hit_chance": 78, "type": "Melee", "drop_rate": 2, "special_power": "vampiric"},
+    "Heaven’s Wrath": {"rarity": "Legendary", "damage": random.randint(100, 125), "hit_chance": 85, "type": "Melee", "drop_rate": 1, "special_power": "holy"},
     "Chrono Blade": {"rarity": "Legendary", "damage": random.randint(95, 110), "hit_chance": 82, "type": "Melee", "drop_rate": 2, "special_power": "time_warp"},
 
     # ---------------- Insane Weapons (20) ----------------
@@ -2826,7 +2841,7 @@ weapons = {
     "Toxic Scythe": {"rarity": "Insane", "damage": random.randint(75, 95), "hit_chance": 55, "type": "Melee", "drop_rate": 30, "special_power": "toxin"},
     "Bloodfang Axe": {"rarity": "Insane", "damage": random.randint(70, 85), "hit_chance": 60, "type": "Melee", "drop_rate": 35, "special_power": "bleed"},
     "Corrupted Bow": {"rarity": "Insane", "damage": random.randint(50, 70), "hit_chance": 70, "type": "Ranged", "drop_rate": 40, "special_power": "curse"},
-    "Soulfire Staff": {"rarity": "Insane", "damage": random.randint(45, 60), "hit_chance": 75, "type": "Magic", "drop_rate": 35, "special_power": "soul_burn"},
+    "Soulfire Staff": {"rarity": "Insane", "damage": random.randint(45, 60), "hit_chance": 75, "type": "Magic", "drop_rate": 35, "special_power": "curse"},
     "Ruin Blade": {"rarity": "Insane", "damage": random.randint(85, 105), "hit_chance": 50, "type": "Melee", "drop_rate": 25, "special_power": "destruction"},
     "Howling Pike": {"rarity": "Insane", "damage": random.randint(60, 85), "hit_chance": 65, "type": "Melee", "drop_rate": 40, "special_power": "scream"},
 
@@ -2834,8 +2849,8 @@ weapons = {
 
     "Bright Blade": {"rarity": "Rare", "damage": random.randint(20, 25), "hit_chance": 75, "type": "Melee", "drop_rate": 60, "special_power": "blind"},
     "Storm Bow": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 80, "type": "Ranged", "drop_rate": 50, "special_power": "shock"},
-    "Crystal Dagger": {"rarity": "Rare", "damage": random.randint(22, 28), "hit_chance": 90, "type": "Melee", "drop_rate": 55, "special_power": "pierce"},
-    "Shadow Katana": {"rarity": "Rare", "damage": random.randint(28, 40), "hit_chance": 75, "type": "Melee", "drop_rate": 45, "special_power": "shadow"},
+    "Crystal Dagger": {"rarity": "Rare", "damage": random.randint(22, 28), "hit_chance": 90, "type": "Melee", "drop_rate": 55, "special_power": "none"},
+    "Shadow Katana": {"rarity": "Rare", "damage": random.randint(28, 40), "hit_chance": 75, "type": "Melee", "drop_rate": 45, "special_power": "curse"},
     "Flame Mace": {"rarity": "Rare", "damage": random.randint(30, 45), "hit_chance": 65, "type": "Melee", "drop_rate": 50, "special_power": "fire"},
     "Moon Spear": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 70, "type": "Melee", "drop_rate": 55, "special_power": "freeze"},
     "Venom Crossbow": {"rarity": "Rare", "damage": random.randint(20, 30), "hit_chance": 80, "type": "Ranged", "drop_rate": 60, "special_power": "poison"},
@@ -2843,11 +2858,11 @@ weapons = {
     "Frost Wand": {"rarity": "Rare", "damage": random.randint(18, 25), "hit_chance": 85, "type": "Magic", "drop_rate": 55, "special_power": "frost"},
     "Spirit Lance": {"rarity": "Rare", "damage": random.randint(30, 40), "hit_chance": 75, "type": "Melee", "drop_rate": 45, "special_power": "drain"},
     "Runed Staff": {"rarity": "Rare", "damage": random.randint(20, 28), "hit_chance": 80, "type": "Magic", "drop_rate": 50, "special_power": "mana_boost"},
-    "Glacier Hammer": {"rarity": "Rare", "damage": random.randint(32, 45), "hit_chance": 65, "type": "Melee", "drop_rate": 45, "special_power": "freeze"},
+    "Glacier Hammer": {"rarity": "Rare", "damage": random.randint(32, 45), "hit_chance": 65, "type": "Melee", "drop_rate": 45, "special_power": "ice"},
     "Stormbreaker Axe": {"rarity": "Rare", "damage": random.randint(35, 50), "hit_chance": 70, "type": "Melee", "drop_rate": 40, "special_power": "shock"},
     "Venom Fang Sword": {"rarity": "Rare", "damage": random.randint(30, 40), "hit_chance": 75, "type": "Melee", "drop_rate": 45, "special_power": "poison"},
     "Ashen Bow": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 80, "type": "Ranged", "drop_rate": 50, "special_power": "fire"},
-    "Sunsteel Spear": {"rarity": "Rare", "damage": random.randint(28, 38), "hit_chance": 70, "type": "Melee", "drop_rate": 55, "special_power": "burn"},
+    "Sunsteel Spear": {"rarity": "Rare", "damage": random.randint(28, 38), "hit_chance": 70, "type": "Melee", "drop_rate": 55, "special_power": "fire"},
     "Cursed Dagger": {"rarity": "Rare", "damage": random.randint(22, 32), "hit_chance": 85, "type": "Melee", "drop_rate": 60, "special_power": "curse"},
     "Echo Staff": {"rarity": "Rare", "damage": random.randint(18, 28), "hit_chance": 80, "type": "Magic", "drop_rate": 55, "special_power": "echo"},
     "Gale Blade": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 85, "type": "Melee", "drop_rate": 50, "special_power": "wind"},
@@ -2905,10 +2920,70 @@ weapons = {
 }
 
 spells = {
+    # Air / Wind
     "Wind Spell": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "none"},
-    "Ice Blast": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "none"},
-    "Lightning Bolt": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "none"},
+    "Gust": {"damage": random.randint(8, 15), "hit_chance": 70, "mana_cost": 2, "special_power": "none"},
+    "Hurricane": {"damage": random.randint(25, 35), "hit_chance": 50, "mana_cost": 8, "special_power": "stun"},
+    "Whirlwind": {"damage": random.randint(18, 28), "hit_chance": 65, "mana_cost": 5, "special_power": "none"},
+    "Zephyr Slash": {"damage": random.randint(12, 20), "hit_chance": 75, "mana_cost": 3, "special_power": "none"},
+
+    # Ice
+    "Ice Blast": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "ice"},
+    "Frost Spike": {"damage": random.randint(15, 25), "hit_chance": 65, "mana_cost": 4, "special_power": "ice"},
+    "Glacier": {"damage": random.randint(30, 40), "hit_chance": 50, "mana_cost": 9, "special_power": "ice"},
+    "Snowstorm": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 6, "special_power": "blind"},
+    "Frozen Shards": {"damage": random.randint(18, 24), "hit_chance": 70, "mana_cost": 5, "special_power": "bleed"},
+
+    # Lightning
+    "Lightning Bolt": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "shock"},
+    "Thunder Strike": {"damage": random.randint(20, 30), "hit_chance": 65, "mana_cost": 5, "special_power": "stun"},
+    "Charge Blast": {"damage": random.randint(15, 25), "hit_chance": 70, "mana_cost": 6, "special_power": "shock"},
+    "Storm Surge": {"damage": random.randint(25, 35), "hit_chance": 55, "mana_cost": 7, "special_power": "shock"},
+    "Ball Lightning": {"damage": random.randint(18, 26), "hit_chance": 65, "mana_cost": 5, "special_power": "fire"},
+
+    # Fire
+    "Fireball": {"damage": random.randint(15, 25), "hit_chance": 65, "mana_cost": 4, "special_power": "fire"},
+    "Flame Wave": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 5, "special_power": "fire"},
+    "Inferno": {"damage": random.randint(35, 50), "hit_chance": 50, "mana_cost": 10, "special_power": "fire"},
+    "Ember Shot": {"damage": random.randint(8, 15), "hit_chance": 80, "mana_cost": 2, "special_power": "fire"},
+    "Dragon’s Breath": {"damage": random.randint(25, 40), "hit_chance": 55, "mana_cost": 7, "special_power": "fire"},
+
+    # Water
+    "Water Jet": {"damage": random.randint(12, 20), "hit_chance": 70, "mana_cost": 3, "special_power": "none"},
+    "Tidal Wave": {"damage": random.randint(28, 38), "hit_chance": 55, "mana_cost": 8, "special_power": "stun"},
+    "Bubble Prison": {"damage": random.randint(8, 12), "hit_chance": 85, "mana_cost": 4, "special_power": "none"},
+    "Aqua Slash": {"damage": random.randint(15, 22), "hit_chance": 75, "mana_cost": 3, "special_power": "bleed"},
+    "Rainstorm": {"damage": random.randint(18, 25), "hit_chance": 70, "mana_cost": 5, "special_power": "none"},
+
+    # Earth
+    "Rock Throw": {"damage": random.randint(10, 18), "hit_chance": 70, "mana_cost": 3, "special_power": "none"},
+    "Earthquake": {"damage": random.randint(30, 45), "hit_chance": 50, "mana_cost": 9, "special_power": "stun"},
+    "Stone Spike": {"damage": random.randint(15, 25), "hit_chance": 65, "mana_cost": 4, "special_power": "none"},
+    "Sandstorm": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 6, "special_power": "blind"},
+    "Iron Fist": {"damage": random.randint(18, 26), "hit_chance": 70, "mana_cost": 5, "special_power": "broken_armor"},
+
+    # Dark
+    "Shadow Bolt": {"damage": random.randint(15, 25), "hit_chance": 70, "mana_cost": 4, "special_power": "curse"},
+    "Nightmare": {"damage": random.randint(25, 35), "hit_chance": 55, "mana_cost": 7, "special_power": "curse"},
+    "Soul Drain": {"damage": random.randint(12, 20), "hit_chance": 65, "mana_cost": 5, "special_power": "vampiric"},
+    "Dark Wave": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 6, "special_power": "curse"},
+    "Abyssal Flame": {"damage": random.randint(30, 40), "hit_chance": 50, "mana_cost": 8, "special_power": "burn"},
+
+    # Holy / Light
+    "Holy Beam": {"damage": random.randint(15, 25), "hit_chance": 75, "mana_cost": 4, "special_power": "heal"},
+    "Radiant Slash": {"damage": random.randint(20, 30), "hit_chance": 70, "mana_cost": 5, "special_power": "blind"},
+    "Healing Light": {"damage": 0, "hit_chance": 100, "mana_cost": 6, "special_power": "heal"},
+    "Smite": {"damage": random.randint(25, 35), "hit_chance": 65, "mana_cost": 7, "special_power": "burn"},
+    "Sunburst": {"damage": random.randint(30, 40), "hit_chance": 55, "mana_cost": 9, "special_power": "burn"},
+
+    # Arcane / Utility
+    "Arcane Missile": {"damage": random.randint(12, 20), "hit_chance": 80, "mana_cost": 3, "special_power": "none"},
+    "Mana Burn": {"damage": random.randint(10, 15), "hit_chance": 70, "mana_cost": 4, "special_power": "mana_drain"},
+    "Time Stop": {"damage": 0, "hit_chance": 100, "mana_cost": 12, "special_power": "stun"},
+    "Teleport Strike": {"damage": random.randint(20, 28), "hit_chance": 85, "mana_cost": 6, "special_power": "teleport"},
+    "Mirror Image": {"damage": 0, "hit_chance": 100, "mana_cost": 5, "special_power": "confusion"},
 }
+
 current_spells = {}
 
 list_of_classes = ["1. Warrior", "2. Mage", "3. Defender"]
@@ -2930,8 +3005,6 @@ Say, you appear to be a noble warrior, and therefore we would petition your help
 What kind of warrior are you, new friend?
 """)
 print_choices(list_of_classes)
-
-
 
 while True:
     chosen_class = input().strip()
@@ -3409,7 +3482,7 @@ while continue_game == True:
                 level_up()
             if next_event == 9:
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                trigger_event11()
+                trigger_event11() 
                 does_game_end()
                 level_up()
             if next_event == 10:
