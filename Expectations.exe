@@ -1,12 +1,7 @@
 There will be at least 60 total events
 Each event might have branching events, requiring their own code
-^ bridge of death (Event 12)
-^ build a shop event (trigger_shop())
 
 is_valid_item() more stuff
-^ more combat_opponent
-
-* More player weapons, maximum 3 in inventory
 
 Castle scripted events
 Required key to enter castle (guarded by a powerful enemy)

@@ -34,6 +34,9 @@ def print_enemy_stats():
     return
 
 def level_up():
+    global max_HP
+    global max_Mana
+
     if chosen_class == 1:
         preferred_stat = "Strength"
     elif chosen_class == 2:
@@ -362,14 +365,16 @@ def enemy_dead(combat_opponent, enemy_level):
     # Set enemy stats
 def trigger_battle(combat_opponent, enemy_level):
     # Ensure Enemy isn't too powerful or too weak
-    enemy_level = random.randint(1, 1000)
-    for i in range(20):
-        new_level = random.randint(1, 1000)
-        if enemy_level > new_level:
-            enemy_level = new_level
 
     if enemy_level == 0:
         enemy_level = random.randint(.75 * character_statistics["Level"]), math.ceil(1.5 * character_statistics["Level"])
+    else:
+        enemy_level = random.randint(1, 1000)
+        for i in range(20):
+            new_level = random.randint(1, 1000)
+            if enemy_level > new_level:
+                new_level = enemy_level
+        enemy_level = new_level
     if enemy_level > math.ceil(1.5 * character_statistics["Level"]):
         enemy_level = math.ceil(1.5 * character_statistics["Level"])
     if enemy_level < math.ceil(.75 * character_statistics["Level"]):
@@ -1649,7 +1654,7 @@ Gained 1 Iron""")
             
             elif fate == 3:
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                trigger_battle("goblin")
+                trigger_battle("goblin", 3)
                 return
             
         elif int(choice_event2) == 2:
@@ -2515,7 +2520,7 @@ def trigger_event10_1():
         if int(choice_event10) == 1:
             print("""You prepare yourself for a fight.""")
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_battle("hydra")
+            trigger_battle("hydra", 0)
 
         elif int(choice_event10) == 2:
             print("""You choose to comply with the monster. The monster continues to stare you down, but makes no aggressive
@@ -2527,7 +2532,7 @@ def trigger_event10_1():
                     
                 \"How dare you ignore me! I will destroy you!\" He shouts.""")
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                trigger_battle("hydra")
+                trigger_battle("hydra", 0)
             else:
                 print("""The monster seems surprisingly content with you leaving him alone. Maybe he doesn't get paid enough for this.""")
                 return
@@ -2610,7 +2615,7 @@ He tells you something about answering 3 questions correctly to cross the bridge
 
         elif int(choice_event12) == 2:
             print("""Bad choice, the bridge was apparently guarded by a troll, and a powerful one, too.""")
-            trigger_battle("troll")
+            trigger_battle("troll", 10)
             return
 
         elif int(choice_event12) == 3:
