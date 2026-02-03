@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adventure Game - Inventory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .inventory-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .inventory-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+
+        .inventory-card.resources {
+            border-color: #28a745;
+        }
+
+        .inventory-card.weapons {
+            border-color: #dc3545;
+        }
+
+        .inventory-card.spells {
+            border-color: #007bff;
+        }
+
+        .item-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .item-quantity {
+            font-size: 24px;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .item-description {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .weapons-list,
+        .spells-list {
+            margin-top: 15px;
+        }
+
+        .weapon-item,
+        .spell-item {
+            background-color: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+
+        .weapon-item {
+            border-left-color: #dc3545;
+        }
+
+        .spell-item {
+            border-left-color: #28a745;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+
+        .empty-slot {
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="inventory-header">
+            <h1>Inventory</h1>
+            <p>Manage your resources, weapons, and spells</p>
+        </div>
+
+        <div class="inventory-grid">
+            <!-- Resources -->
+            <div class="inventory-card resources">
+                <div class="item-icon">🪵</div>
+                <div class="item-name">Wood</div>
+                <div class="item-quantity" id="wood">0</div>
+                <div class="item-description">Used for crafting and building</div>
+            </div>
+
+            <div class="inventory-card resources">
+                <div class="item-icon">⛏️</div>
+                <div class="item-name">Iron</div>
+                <div class="item-quantity" id="iron">0</div>
+                <div class="item-description">Used for crafting tools and weapons</div>
+            </div>
+
+            <div class="inventory-card resources">
+                <div class="item-icon">🪙</div>
+                <div class="item-name">Gold</div>
+                <div class="item-quantity" id="gold">5</div>
+                <div class="item-description">Currency for trading</div>
+            </div>
+
+            <div class="inventory-card resources">
+                <div class="item-icon">💰</div>
+                <div class="item-name">Money</div>
+                <div class="item-quantity" id="money">5</div>
+                <div class="item-description">Basic currency</div>
+            </div>
+
+            <div class="inventory-card resources">
+                <div class="item-icon">🦆</div>
+                <div class="item-name">Rubber Ducks</div>
+                <div class="item-quantity" id="ducks">1</div>
+                <div class="item-description">Mysterious collectibles</div>
+            </div>
+        </div>
+
+        <!-- Weapons -->
+        <div class="inventory-card weapons">
+            <div class="item-icon">⚔️</div>
+            <div class="item-name">Weapons</div>
+            <div class="weapons-list" id="weaponsList">
+                <div class="weapon-item">
+                    <strong>Slot 1:</strong> <span id="weapon1">Fist</span>
+                </div>
+                <div class="weapon-item">
+                    <strong>Slot 2:</strong> <span id="weapon2">Fist</span>
+                </div>
+                <div class="weapon-item">
+                    <strong>Slot 3:</strong> <span id="weapon3">Fist</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spells -->
+        <div class="inventory-card spells">
+            <div class="item-icon">🔮</div>
+            <div class="item-name">Spells</div>
+            <div class="spells-list" id="spellsList">
+                <!-- Spells will be populated here -->
+                <div class="empty-slot">No spells learned yet</div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="index.html" class="back-button">Back to Game</a>
+        </div>
+    </div>
+
+    <script>
+        // This would be populated with actual game data
+        // For now, showing placeholder values
+        function updateInventory() {
+            // In a real implementation, this would fetch data from the game
+            const inventory = {
+                wood: 0,
+                iron: 0,
+                gold: 5,
+                money: 5,
+                ducks: 1,
+                weapons: ["Fist", "Fist", "Fist"],
+                spells: {} // Empty for now
+            };
+
+            document.getElementById('wood').textContent = inventory.wood;
+            document.getElementById('iron').textContent = inventory.iron;
+            document.getElementById('gold').textContent = inventory.gold;
+            document.getElementById('money').textContent = inventory.money;
+            document.getElementById('ducks').textContent = inventory.ducks;
+
+            // Update weapons
+            for (let i = 0; i < inventory.weapons.length; i++) {
+                document.getElementById(`weapon${i + 1}`).textContent = inventory.weapons[i];
+            }
+
+            // Update spells
+            const spellsList = document.getElementById('spellsList');
+            spellsList.innerHTML = '';
+
+            if (Object.keys(inventory.spells).length === 0) {
+                spellsList.innerHTML = '<div class="empty-slot">No spells learned yet</div>';
+            } else {
+                for (const [spell, count] of Object.entries(inventory.spells)) {
+                    const spellItem = document.createElement('div');
+                    spellItem.className = 'spell-item';
+                    spellItem.innerHTML = `<strong>${spell}:</strong> ${count}`;
+                    spellsList.appendChild(spellItem);
+                }
+            }
+        }
+
+        // Update inventory on page load
+        updateInventory();
+    </script>
+</body>
+
+</html>

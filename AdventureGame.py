@@ -5,6 +5,7 @@ import random
 import sys
 import math
 import time
+import pygame
 
 def print_choices(choice_list):
     print(choice_list[0])
@@ -13,13 +14,16 @@ def print_choices(choice_list):
     print("")
     return
 
-# Pre-enabled Conditions and Stats
+# Pre-enabled Stats
 
 max_HP = 20
 max_Mana = 20
 critical_chance = 15
+
+# Event Flags
 is_Victorious = False
 is_On_Water = False
+is_Thirsty = False
 
 def print_stats():
     print(character_statistics)
@@ -32,6 +36,15 @@ def check_inventory():
 def print_enemy_stats():
     print(enemy_stats)
     return
+
+def all_stats_increase():
+    character_statistics["Defence"] += 1
+    character_statistics["Strength"] += 1
+    character_statistics["Magic"] += 1
+    character_statistics["Dexterity"] += 1
+    character_statistics["Swim"] += 1
+    character_statistics["Speed"] += 1
+    character_statistics["Intellect"] += 1
 
 def level_up():
     global max_HP
@@ -76,7 +89,7 @@ def level_up():
         if character_statistics["Level"] % 2 == 0:
             character_statistics["Strength"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.75))
             character_statistics["Speed"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.5))
-            character_statistics["Dexterity"] += random.randint(1, math.ceil(character_statistics["Level" * 0.5]))
+            character_statistics["Dexterity"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.5))
         if character_statistics["Level"] % 3 == 0:
             character_statistics["Magic"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.75))
             character_statistics["Swim"] += random.randint(1, math.ceil(character_statistics["Level"] * 0.5))
@@ -200,7 +213,7 @@ def calculate_damage(attack_type, weapon_damage, strike_chance):
     if attack_type.lower() == "melee":
         damage_dealt = ((character_statistics["Strength"] * 0.25) * weapon_damage) - enemy_stats["Defense"]
     elif attack_type.lower() == "magic":
-        damage_dealt = ((character_statistics["Magic"] * 0.5) * weapon_damage) - enemy_stats["Magic"]
+        damage_dealt = ((character_statistics["Magic"] * 0.35) * weapon_damage) - enemy_stats["Magic"]
     elif attack_type.lower() == "throw":
         damage_dealt = ((character_statistics["Strength"] * 0.5) * weapon_damage) - enemy_stats["Defense"]
     elif attack_type.lower() == "ranged":
@@ -253,7 +266,7 @@ def is_valid_item(choice, item_lookup):
             # Do wood-related logic here
         elif item.lower() == "gold":
             # Throw gold at enemy
-            if random.randint(1, 100) < character_statistics["Speed"] * (character_statistics["Strength"] + character_statistics["Magic"]):
+            if random.randint(1, 50) < character_statistics["Dexterity"] * character_statistics["Strength"] + 5:
                 damage = calculate_damage("throw", random.randint(1, 10), 1)
                 print(f"""You chuck a piece of gold at the enemy, dealing {damage} damage""")
                 enemy_stats["HP"] -= damage
@@ -309,6 +322,7 @@ def is_valid_spell(choice):
 
     # Calculate damage
     damage = calculate_damage("magic",spell_stats["damage"],spell_stats["hit_chance"])
+    character_statistics["Mana"] -= spell_stats["mana_cost"]
     if damage is None:
         return
 
@@ -364,10 +378,29 @@ def enemy_dead(combat_opponent, enemy_level):
 
     # Set enemy stats
 def trigger_battle(combat_opponent, enemy_level):
+    # Optional ability for random battle opponent
+    import random
+
+    enemies = {
+        "hydra": {"encounter_chance": 10},
+        "goblin": {"encounter_chance": 40},
+        "orc": {"encounter_chance": 20},
+        "ogre": {"encounter_chance": 20},
+        "wizard": {"encounter_chance": 15},
+        "golem": {"encounter_chance": 15},
+        "dragon": {"encounter_chance": 5},
+        "bandit": {"encounter_chance": 40},
+        "troll": {"encounter_chance": 20}
+    }
+
+    opponents = list(enemies.keys())
+    encounter_chance = [enemies[o]["encounter_chance"] for o in opponents]
+    combat_opponent = random.choices(opponents, weights=encounter_chance, k=1)[0]
+
     # Ensure Enemy isn't too powerful or too weak
 
     if enemy_level == 0:
-        enemy_level = random.randint(.75 * character_statistics["Level"]), math.ceil(1.5 * character_statistics["Level"])
+        enemy_level = random.randint(math.ceil(.75 * character_statistics["Level"]), math.ceil(1.5 * character_statistics["Level"]))
     else:
         enemy_level = random.randint(1, 1000)
         for i in range(20):
@@ -387,7 +420,7 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Strength"] = 5 * enemy_level
         enemy_stats["Defense"] = 5 * enemy_level
         enemy_stats["Speed"] = 5 * enemy_level
-        enemy_stats["Magic"] = 0
+        enemy_stats["Magic"] = 1 * enemy_level
 
     # Goblin Battle
     elif combat_opponent.lower() == "goblin":
@@ -396,7 +429,7 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Strength"] = 2 * enemy_level
         enemy_stats["Defense"] = 1 * enemy_level
         enemy_stats["Speed"] = 1 * enemy_level
-        enemy_stats["Magic"] = 0
+        enemy_stats["Magic"] = 1 * enemy_level
 
     # Ogre Battle
     elif combat_opponent.lower() == "ogre":
@@ -405,7 +438,7 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Strength"] = 3 * enemy_level
         enemy_stats["Defense"] = 5 * enemy_level
         enemy_stats["Speed"] = 1 * enemy_level
-        enemy_stats["Magic"] = 0
+        enemy_stats["Magic"] = 1 * enemy_level
 
     # Orc Battle
     elif combat_opponent.lower() == "orc":
@@ -414,7 +447,7 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Strength"] = 2 * enemy_level
         enemy_stats["Defense"] = 5 * enemy_level
         enemy_stats["Speed"] = 1 * enemy_level
-        enemy_stats["Magic"] = 0
+        enemy_stats["Magic"] = 1 * enemy_level
 
     # Wizard Battle
         print(f"""You are in combat against a level {enemy_level} wizard.""")
@@ -430,7 +463,7 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Strength"] = 2 * enemy_level
         enemy_stats["Defense"] = 8 * enemy_level
         enemy_stats["Speed"] = 1 * enemy_level
-        enemy_stats["Magic"] = 0
+        enemy_stats["Magic"] = 1 * enemy_level
 
     # Bandit Battle
     elif combat_opponent.lower() == "bandit":
@@ -440,7 +473,7 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Strength"] = 3 * enemy_level
         enemy_stats["Defense"] = 2 * enemy_level
         enemy_stats["Speed"] = 6 * enemy_level
-        enemy_stats["Magic"] = 0
+        enemy_stats["Magic"] = 1 * enemy_level
 
     # Dragon Battle
     elif combat_opponent.lower() == "dragon":
@@ -458,7 +491,7 @@ def trigger_battle(combat_opponent, enemy_level):
         enemy_stats["Strength"] = 8 * enemy_level
         enemy_stats["Defense"] = 4 * enemy_level
         enemy_stats["Speed"] = 2 * enemy_level
-        enemy_stats["Magic"] = 0
+        enemy_stats["Magic"] = 1 * enemy_level
 
     else:
         print("ERROR: No valid enemy selected")
@@ -548,19 +581,18 @@ def combat_attack():
                             print(f"{print_number}. {spell}")
                             item_lookup[print_number] = spell
                             print_number += 1
-
                     choice_spell = input()
                     try:
                         choice_spell = int(choice_spell)
                     except ValueError:
                         print("Please type a number from the menu.")
-                        continue
                     
                     if choice_spell == 1:
                         continue
                     else:
                         is_valid_spell(item_lookup[choice_spell])
                         break
+
                 elif int(choice_attack) == 3:
                     print("Which item would you like to use?\n")
                     print("1. Back")
@@ -931,14 +963,14 @@ You are slain by the pirates.""")
                     return
             
             if int(choice_event_pirates) == 2:
-                if character_statistics["Magic"] > 5 and "Lightning Bolt" in inventory:
-                    print("""You conjure up an incredible storm using the power of the lightning bolt obtained from the wizard earlier.
+                if character_statistics["Magic"] > 5 and "Lightning Bolt" in current_spells:
+                    print("""You conjure up an incredible storm using the power of the lightning bolt.
 You destroy the pirates, they won't be trying that again for a long time.
                         
 Gained 20 XP""")
                     character_statistics["XP"] += 20
                     return
-                elif character_statistics["Magic"] > 5 and "Lightning Bolt" not in inventory:
+                elif character_statistics["Magic"] > 5 and "Lightning Bolt" not in current_spells:
                     print("""You conjure up a storm using your learned magical powers. The pirates retreat, but are not defeated.
                         
 Gained 5 XP""")
@@ -1635,9 +1667,16 @@ Another challenge awaits! You find yourself in a thick swamp. What will you do?
             if fate == 1:
                 print("""Well done fighter! You have found some wood.
                         
-Gained 1 Wood""")
-                
-                inventory["Wood"] += 1
+Gained 1 Wood
+What do you do with it?
+1. Keep it
+2. Use it now""")
+                sub_choice = input()
+                if sub_choice == "1":
+                    inventory["Wood"] += 1
+                elif sub_choice == "2":
+                    print("""You build a small shelter. Morale +5.""")
+                    character_statistics["Morale"] += 5
                 setting["Tundra"] = True
                 setting["Swamp"] = False
                 return
@@ -1645,9 +1684,19 @@ Gained 1 Wood""")
             elif fate == 2:
                 print("""Well done fighter! You have found some iron.
                         
-Gained 1 Iron""")
-                
-                inventory["Iron"] += 1
+Gained 1 Iron
+What do you do with it?
+1. Keep it
+2. Craft a tool""")
+                sub_choice = input()
+                if sub_choice == "1":
+                    inventory["Iron"] += 1
+                elif sub_choice == "2" and character_statistics["Intellect"] > 5:
+                    print("""Crafted a tool. Strength +1.""")
+                    character_statistics["Strength"] += 1
+                else:
+                    print("""Failed to craft.""")
+                    inventory["Iron"] += 1
                 setting["Tundra"] = True
                 setting["Swamp"] = False
                 return
@@ -1705,8 +1754,16 @@ def trigger_event3():
             print("""You spin around, sword outstretched, daring any gnomoes to come close to you.
 They run to you in hoardes, but are sliced down and slain by your sword.
                 
-Gained 20 XP""")
-            character_statistics["XP"] += 20
+Gained 20 XP
+What now?
+1. Loot the bodies
+2. Continue""")
+            sub_choice = input()
+            if sub_choice == "1":
+                print("""Found 5 Money.""")
+                inventory["Money"] += 5
+            elif sub_choice == "2":
+                print("""You leave.""")
             return
 
         elif int(choice_event3) == 1 and character_statistics["Strength"] < 15:
@@ -2233,7 +2290,10 @@ You encounter a wizard deep in the forest. He appears to be nice! He hands you a
           
 Obtain Lightning Bolt""")
 
-    inventory["Lightning Bolt"] = 1
+    if "Lightning Bolt" not in current_spells == 0:
+        current_spells["Lightning Bolt"] = 1
+    else:
+        inventory["Book"] += 1
 
 # Plains/Forest/Jungle Event
 def trigger_event8():
@@ -2568,14 +2628,92 @@ def trigger_event11():
             if character_statistics["Strength"] <= 5:
                 print("""You are too wimpy to take it out
                       
-Lose 3 HP!""")
+Lose 3 HP""")
                 character_statistics["HP"] -= 3
+                return
+            
+            elif character_statistics["Strength"] > 5:
+                fate = random.randint(1, 100)
+                if fate <= 78:
+                    print("""You manage to remove the arrow from your knee, but it hurts really badly.
+                          
+Lose 3 HP""")
+                    character_statistics["HP"] -= 3
+                    return
+                
+                else:
+                    print("""You manage to remove the arrow from your knee, and cleanly. You put a bandaid on it, and you're good to go!
+                          
+Gained 1 Dexterity""")
+                    character_statistics["Dexterity"] += 1
+                    return
 
         elif int(choice_event11) == 2:
-            print()
+            if character_statistics["Defense"] >= 10:
+                print("""You snap off the end of the arrow. You are tough enough that you barely feel the arrow head embedded in your knee.
+However, the pain flares up when you move too quickly.
+                      
+Lose 1 Speed""")
+                character_statistics["Speed"] -= 1
+                return
+            
+            elif character_statistics["Dexterity"] <= 3:
+                fate = random.randint(1, 100)
+                if fate <= 70:
+                    print("""You snap the arrow off, and now you can't remove it. You should have gone to a doctor.
+                          
+Max HP reduced by 2""")
+                    max_HP -= 2
+                    if character_statistics["HP"] > max_HP:
+                        character_statistics["HP"] = max_HP
+                    return
+                
+                else:
+                    HP_Loss = 1
+                    if HP_Loss >= character_statistics["HP"]:
+                        HP_Loss = 0
+
+                    if HP_Loss == 1:
+                        print("""When trying to snap the arrow off, somehow you simply pull the whole thing out. It hurts very bad, but at least you're alright.
+You even feel a little more dexterity coming on
+                          
+Lose 1 HP
+Gained 1 Dexterity""")
+                        character_statistics["HP"] -= 1
+                        character_statistics["Dexterity"] -= 1
+                        return
+
+                    if HP_Loss == 0:
+                        print("""You manage to snap the arrow off by the head, and the head happens to fall out. What luck!""")
+                        return
+                    
+            else:
+                fate = random.randint(1, 100)
+                if fate <= 60:
+                    print("""When trying to snap the arrow off, somehow you simply pull the whole thing out. It hurts very bad, but at least you're alright.
+You even feel a little more dexterity coming on
+                          
+Lose 1 HP
+Gained 1 Dexterity""")
+                    character_statistics["HP"] -= 1
+                    character_statistics["Dexterity"] -= 1
+                    return
+                
+                if fate <= 80:
+                    print("""You snap the arrow off, and the arrow dislodges itself, but does some damage on the way out.
+Lose 3 HP""")
+                    character_statistics["HP"] -= 3
+                    return
 
         elif int(choice_event11) == 3:
-            print()
+            print("""Bold choice, traveler. You simply lose 2 Max HP.
+            
+Max HP reduced by 2!""")
+            max_HP -= 2
+            if character_statistics["HP"] > max_HP:
+                character_statistics["HP"] = max_HP
+
+            return
         
         elif int(choice_event11) == 4:
             print_stats()
@@ -2703,15 +2841,17 @@ Lost 15 HP!""")
         print("""In the works""")
         return
 
+# Desert Event
 def trigger_event13():
         
     repeat = True
 
     while repeat == True:
-        print("""
-1. 
-2. 
-3. 
+        print("""The desert is hot. You haven't had anything to drink in days. Suddenly, you see an oasis in the distance.
+You are saved!
+1. Go to the oasis and have a drink
+2. Ignore it and keep going
+3. Collapse and hope someone finds you
 4. Stats
 5. Inventory 
 """)
@@ -2719,13 +2859,111 @@ def trigger_event13():
         choice_event13 = input()
         
         if int(choice_event13) == 1:
-            print()
+            fate = random.randint(1, 100)
+            if fate <= 50:
+                print("""You walk over to the oasis, take a sip of water, but it tastes strangely like sand... probably because it is.
+You fell for the classic mirage trap.
+                      
+Lose 5 HP
+Lose 15 Morale""")
+                character_statistics["HP"] -= 5
+                character_statistics["Morale"] -= 15
+                return
+            
+            elif fate <= 70:
+                print("""You walk over to the oasis and have a drink of water. It's nice, but the village locals don't seem to happy.
+Upon closer inspection, they appear to be goblins, and you are attacked by their leader, a massive orc.""")
+                time.sleep(1)
+
+                trigger_battle("orc", 0)
+                return
+            
+            elif fate <= 95:
+                print("""You have a nice sip of water, and continue on your way.
+                      
+Gained 5 Morale""")
+                character_statistics["Morale"] += 5
+                return
+            
+            elif fate <= 100:
+                print("""You discover the fountain of living water. Who would've thought it would be in the desert? You take a sip.
+                      
+HP permanent increase!
+Energy restored!
+Morale restored!
+All stats increased by 1!
+Gained 10 XP""")
+                
+                max_HP += math.ceil(max_HP*0.1)
+                character_statistics["Energy"] = 100
+                character_statistics["Morale"] = 100
+                character_statistics["XP"] += 10
+                all_stats_increase()
 
         elif int(choice_event13) == 2:
-            print()
+            fate = random.randint(1, 2)
+            if fate == 1:
+                print("""You walk away from the possible oasis. Probably just a mirage or something.""")
+                return
+            if fate == 2:
+                print("""You decide to leave the mirage, and luckily for you, you stumble into a forest. Lucky break!""")
+                enter_setting("forest")
+                return
 
         elif int(choice_event13) == 3:
-            print()
+            fate = random.randint(1, 100)
+            if fate < 30:
+                print("""You collapse in the sand, hoping that somebody comes to find you.
+                      
+A travelling merchant arrives, and out of kindness offers you water, but wants 3 money from you.
+Do you give it to him?
+                      
+1. Yes
+2. No""")
+                give_Money = int(input())
+                if give_Money == 1 and inventory["Money"] >= 3:
+                    print("""The merchant keeps his word, and hands you an entire canteen of water. You chug the whole thing, and continue on your quest.""")
+                    inventory["Money"] -= 3
+                    return
+                elif give_Money == 1 and inventory["Money"] <= 2:
+                    fate = random.randint(1, 10)
+                    if fate * inventory["Money"] <= 10:
+                        print("""Luckily for you, the merchant is merciful, despite you not having enough money to pay him. He offers you water, and takes what little you have.""")
+                        inventory["Money"] = 0
+                        return
+                    else:
+                        print("""You don't have enough to pay the merchant. He leaves.""")
+                        is_Thirsty = True
+                        return
+                elif give_Money == 2:
+                    fate = random.randint(1, 100)
+                    if fate <= 70:
+                        print("""The merchant walks away.""")
+                        return
+                    else:
+                        print("""This good merchant decides to offer you water, despite your decision to reject him. You are no longer thirsty""")
+                        return
+                else:
+                    print("""The merchant doesn't seem to understand your response, and decides to leave. You are still stranded.""")
+                    is_Thirsty = True
+
+            elif fate <= 35:
+                print("""Nobody comes to save you. You lay there for a long time, and eventually perish. It was a good journey, traveller.""")
+                character_statistics["HP"] = 0
+                return
+            
+            elif fate <= 55:
+                print("""You are completely alone. Nobody comes to save you. However, by some stroke of luck, you wake up next to the water.
+You don't remember a thing, but take a drink. However, you feel exhausted.
+                      
+Lost 20 Energy""")
+                character_statistics["Energy"] -= 20
+                return
+            
+            elif fate <= 75:
+                print()
+            elif fate <= 100:
+                print()
         
         elif int(choice_event13) == 4:
             print_stats()
@@ -2735,6 +2973,871 @@ def trigger_event13():
             check_inventory()
             repeat = True
 
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Forest Event - Friendly Animal
+def trigger_event14():
+    repeat = True
+    while repeat == True:
+        print("""You hear rustling in the bushes. A friendly deer appears!
+1. Try to pet it
+2. Hunt it for food
+3. Ignore it and continue
+4. Stats
+5. Inventory
+""")
+        choice_event14 = input()
+        if int(choice_event14) == 1:
+            if character_statistics["Dexterity"] > 10:
+                print("""The deer lets you pet it. You gain some peace.
+Gained 5 Morale""")
+                character_statistics["Morale"] += 5
+            else:
+                print("""The deer gets scared and runs away.""")
+            return
+        elif int(choice_event14) == 2:
+            print("""You attempt to hunt the deer.""")
+            if random.randint(1, 100) < character_statistics["Dexterity"] * 5:
+                print("""You successfully hunt the deer. Gained food.
+Energy restored!""")
+                character_statistics["Energy"] = 100
+            else:
+                print("""The deer escapes.""")
+            return
+        elif int(choice_event14) == 3:
+            print("""You continue on your path.""")
+            return
+        elif int(choice_event14) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event14) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Swamp Event - Poisonous Plants
+def trigger_event15():
+    repeat = True
+    while repeat == True:
+        print("""You see glowing plants in the swamp. They look dangerous.
+1. Touch them
+2. Avoid them
+3. Try to harvest them
+4. Stats
+5. Inventory
+""")
+        choice_event15 = input()
+        if int(choice_event15) == 1:
+            print("""You touch the plants and get poisoned.
+Lost 10 HP""")
+            character_statistics["HP"] -= 10
+            return
+        elif int(choice_event15) == 2:
+            print("""You wisely avoid the plants.""")
+            return
+        elif int(choice_event15) == 3:
+            if character_statistics["Intellect"] > 10:
+                print("""You carefully harvest the plants. They might be useful.
+Gained 5 XP""")
+                character_statistics["XP"] += 5
+            else:
+                print("""You get poisoned while harvesting.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event15) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event15) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Plains Event - Herd of Animals
+def trigger_event16():
+    repeat = True
+    while repeat == True:
+        print("""A herd of wild horses runs across the plains.
+1. Try to tame one
+2. Scare them away
+3. Watch them pass
+4. Stats
+5. Inventory
+""")
+        choice_event16 = input()
+        if int(choice_event16) == 1:
+            if character_statistics["Dexterity"] > 15:
+                print("""You tame a horse! Speed increased temporarily.
+Gained 10 XP""")
+                character_statistics["Speed"] += 2
+                character_statistics["XP"] += 10
+            else:
+                print("""The horses are too wild.""")
+            return
+        elif int(choice_event16) == 2:
+            print("""You scare the herd away.""")
+            return
+        elif int(choice_event16) == 3:
+            print("""You enjoy the sight. Morale boosted.
+Gained 5 Morale""")
+            character_statistics["Morale"] += 5
+            return
+        elif int(choice_event16) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event16) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Ocean Event - Sea Monster
+def trigger_event17():
+    repeat = True
+    while repeat == True:
+        print("""A sea monster emerges from the depths!
+1. Fight it
+2. Dive underwater to hide
+3. Sail away
+4. Stats
+5. Inventory
+""")
+        choice_event17 = input()
+        if int(choice_event17) == 1:
+            trigger_battle("dragon", 0)
+            return
+        elif int(choice_event17) == 2:
+            if character_statistics["Swim"] > 10:
+                print("""You hide underwater successfully.""")
+            else:
+                print("""You can't swim well enough. The monster attacks.
+Lost 15 HP""")
+                character_statistics["HP"] -= 15
+            return
+        elif int(choice_event17) == 3:
+            if character_statistics["Speed"] > 10:
+                print("""You sail away safely.""")
+            else:
+                print("""The monster catches up.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event17) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event17) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Tundra Event - Blizzard
+def trigger_event18():
+    repeat = True
+    while repeat == True:
+        print("""A blizzard hits! You need shelter.
+1. Build a snow fort
+2. Keep moving
+3. Find a cave
+4. Stats
+5. Inventory
+""")
+        choice_event18 = input()
+        if int(choice_event18) == 1:
+            if character_statistics["Strength"] > 10:
+                print("""You build a fort. You survive the blizzard.
+Energy restored!""")
+                character_statistics["Energy"] = 100
+            else:
+                print("""The fort collapses.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event18) == 2:
+            print("""You push through the blizzard.
+Lost 20 Energy""")
+            character_statistics["Energy"] -= 20
+            return
+        elif int(choice_event18) == 3:
+            if random.randint(1, 100) < 50:
+                print("""You find a cave with treasure!
+Gained 10 XP""")
+                character_statistics["XP"] += 10
+            else:
+                print("""No cave found. You freeze.
+Lost 15 HP""")
+                character_statistics["HP"] -= 15
+            return
+        elif int(choice_event18) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event18) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Jungle Event - Vines
+def trigger_event19():
+    repeat = True
+    while repeat == True:
+        print("""Thick vines block your path in the jungle.
+1. Cut them
+2. Climb over
+3. Go around
+4. Stats
+5. Inventory
+""")
+        choice_event19 = input()
+        if int(choice_event19) == 1:
+            if character_statistics["Strength"] > 10:
+                print("""You cut through the vines.""")
+            else:
+                print("""The vines are too tough. You get tangled.
+Lost 5 HP""")
+                character_statistics["HP"] -= 5
+            return
+        elif int(choice_event19) == 2:
+            if character_statistics["Dexterity"] > 10:
+                print("""You climb over successfully.""")
+            else:
+                print("""You fall.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event19) == 3:
+            print("""You go around. It takes longer.
+Lost 10 Energy""")
+            character_statistics["Energy"] -= 10
+            return
+        elif int(choice_event19) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event19) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Desert Event - Sandstorm
+def trigger_event20():
+    repeat = True
+    while repeat == True:
+        print("""A sandstorm approaches!
+1. Find shelter
+2. Run through it
+3. Wait it out
+4. Stats
+5. Inventory
+""")
+        choice_event20 = input()
+        if int(choice_event20) == 1:
+            if random.randint(1, 100) < 50:
+                print("""You find shelter.""")
+            else:
+                print("""No shelter found.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event20) == 2:
+            if character_statistics["Speed"] > 15:
+                print("""You run through safely.""")
+            else:
+                print("""You get lost in the storm.
+Lost 15 HP""")
+                character_statistics["HP"] -= 15
+            return
+        elif int(choice_event20) == 3:
+            print("""You wait. The storm passes.
+Lost 10 Energy""")
+            character_statistics["Energy"] -= 10
+            return
+        elif int(choice_event20) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event20) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Mountains Event - Avalanche
+def trigger_event21():
+    repeat = True
+    while repeat == True:
+        print("""You hear rumbling. An avalanche is coming!
+1. Climb higher
+2. Hide behind rocks
+3. Run downhill
+4. Stats
+5. Inventory
+""")
+        choice_event21 = input()
+        if int(choice_event21) == 1:
+            if character_statistics["Dexterity"] > 15:
+                print("""You climb to safety.""")
+            else:
+                print("""You can't climb fast enough.
+Lost 20 HP""")
+                character_statistics["HP"] -= 20
+            return
+        elif int(choice_event21) == 2:
+            if random.randint(1, 100) < 60:
+                print("""The rocks protect you.""")
+            else:
+                print("""The avalanche buries you partially.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event21) == 3:
+            if character_statistics["Speed"] > 15:
+                print("""You run to safety.""")
+            else:
+                print("""You get caught.
+Lost 15 HP""")
+                character_statistics["HP"] -= 15
+            return
+        elif int(choice_event21) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event21) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Forest Event - Treasure Chest
+def trigger_event22():
+    repeat = True
+    while repeat == True:
+        print("""You find a chest hidden in the forest.
+1. Open it
+2. Check for traps
+3. Leave it
+4. Stats
+5. Inventory
+""")
+        choice_event22 = input()
+        if int(choice_event22) == 1:
+            if random.randint(1, 100) < 30:
+                print("""It's trapped! Poison gas.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            else:
+                print("""You find gold!
+Gained 5 Money""")
+                inventory["Money"] += 5
+            return
+        elif int(choice_event22) == 2:
+            if character_statistics["Intellect"] > 10:
+                print("""You disarm the trap and get the gold.
+Gained 5 Money""")
+                inventory["Money"] += 5
+            else:
+                print("""You trigger the trap.
+Lost 5 HP""")
+                character_statistics["HP"] -= 5
+            return
+        elif int(choice_event22) == 3:
+            print("""You leave it behind.""")
+            return
+        elif int(choice_event22) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event22) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Swamp Event - Quicksand
+def trigger_event23():
+    repeat = True
+    while repeat == True:
+        print("""You step into quicksand!
+1. Struggle
+2. Use a rope (if you have one)
+3. Call for help
+4. Stats
+5. Inventory
+""")
+        choice_event23 = input()
+        if int(choice_event23) == 1:
+            if character_statistics["Strength"] > 15:
+                print("""You pull yourself out.""")
+            else:
+                print("""You sink deeper.
+Lost 15 HP""")
+                character_statistics["HP"] -= 15
+            return
+        elif int(choice_event23) == 2:
+            if "Rope" in inventory and inventory["Rope"] > 0:
+                print("""You use the rope to pull yourself out.""")
+                inventory["Rope"] -= 1
+            else:
+                print("""No rope. You struggle.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event23) == 3:
+            if random.randint(1, 100) < 20:
+                print("""Someone helps you out.""")
+            else:
+                print("""No one comes.
+Lost 10 HP""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event23) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event23) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Forest Event - Ancient Ruins
+def trigger_event24():
+    repeat = True
+    while repeat == True:
+        print("""You stumble upon ancient ruins in the forest.
+1. Enter the ruins
+2. Search the perimeter
+3. Leave
+4. Stats
+5. Inventory
+""")
+        choice_event24 = input()
+        if int(choice_event24) == 1:
+            print("""Inside, you find a puzzle. Solve it?
+1. Yes
+2. No""")
+            sub_choice = input()
+            if sub_choice == "1" and character_statistics["Intellect"] > 10:
+                print("""You solve it! Gained 10 XP and a relic.""")
+                character_statistics["XP"] += 10
+            else:
+                print("""Failed. Trap activated. Lost 10 HP.""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event24) == 2:
+            print("""You find hidden gold. Gained 5 Money.""")
+            inventory["Money"] += 5
+            return
+        elif int(choice_event24) == 3:
+            print("""You leave safely.""")
+            return
+        elif int(choice_event24) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event24) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Swamp Event - Foggy Mystery
+def trigger_event25():
+    repeat = True
+    while repeat == True:
+        print("""A thick fog rolls in over the swamp.
+1. Navigate through the fog
+2. Wait for it to clear
+3. Build a signal fire
+4. Stats
+5. Inventory
+""")
+        choice_event25 = input()
+        if int(choice_event25) == 1:
+            if character_statistics["Speed"] > 10:
+                print("""You navigate successfully. Found a shortcut.""")
+            else:
+                print("""You get lost. Lost 10 Energy.""")
+                character_statistics["Energy"] -= 10
+            return
+        elif int(choice_event25) == 2:
+            print("""Fog clears. You see a path. Morale boosted.""")
+            character_statistics["Morale"] += 5
+            return
+        elif int(choice_event25) == 3:
+            if inventory["Wood"] > 0:
+                print("""Fire attracts help. Gained 5 XP.""")
+                inventory["Wood"] -= 1
+                character_statistics["XP"] += 5
+            else:
+                print("""No wood. Nothing happens.""")
+            return
+        elif int(choice_event25) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event25) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Plains Event - River Crossing
+def trigger_event26():
+    repeat = True
+    while repeat == True:
+        print("""A wide river blocks your path on the plains.
+1. Swim across
+2. Build a raft
+3. Find a bridge
+4. Stats
+5. Inventory
+""")
+        choice_event26 = input()
+        if int(choice_event26) == 1:
+            if character_statistics["Swim"] > 10:
+                print("""You swim across safely.""")
+            else:
+                print("""Current is strong. Lost 15 HP.""")
+                character_statistics["HP"] -= 15
+            return
+        elif int(choice_event26) == 2:
+            if inventory["Wood"] >= 3:
+                print("""Raft built. Crossed safely. Used 3 Wood.""")
+                inventory["Wood"] -= 3
+            else:
+                print("""Not enough wood.""")
+            return
+        elif int(choice_event26) == 3:
+            print("""You find a bridge, but it's guarded.
+1. Fight
+2. Sneak""")
+            sub_choice = input()
+            if sub_choice == "1":
+                trigger_battle("bandit", 0)
+            elif sub_choice == "2" and character_statistics["Dexterity"] > 10:
+                print("""Sneaked past.""")
+            else:
+                print("""Caught. Lost 10 HP.""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event26) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event26) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Ocean Event - Island Discovery
+def trigger_event27():
+    repeat = True
+    while repeat == True:
+        print("""You spot an island in the distance.
+1. Sail to it
+2. Ignore it
+3. Send a scout
+4. Stats
+5. Inventory
+""")
+        choice_event27 = input()
+        if int(choice_event27) == 1:
+            print("""On the island, you find...
+1. Treasure
+2. Cannibals""")
+            sub_choice = input()
+            if sub_choice == "1":
+                print("""Gained 10 Money.""")
+                inventory["Money"] += 10
+            elif sub_choice == "2":
+                trigger_battle("orc", 0)
+            return
+        elif int(choice_event27) == 2:
+            print("""You continue sailing.""")
+            return
+        elif int(choice_event27) == 3:
+            if character_statistics["Dexterity"] > 10:
+                print("""Scout reports treasure. Gained 5 Money.""")
+                inventory["Money"] += 5
+            else:
+                print("""Scout lost. Lost 5 Morale.""")
+                character_statistics["Morale"] -= 5
+            return
+        elif int(choice_event27) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event27) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Tundra Event - Ice Cave
+def trigger_event28():
+    repeat = True
+    while repeat == True:
+        print("""You find an ice cave entrance.
+1. Enter
+2. Mine ice
+3. Seal it
+4. Stats
+5. Inventory
+""")
+        choice_event28 = input()
+        if int(choice_event28) == 1:
+            print("""Inside, an evil ogre!
+1. Fight
+2. Run""")
+            sub_choice = input()
+            if sub_choice == "1":
+                trigger_battle("ogre", 3)
+            elif sub_choice == "2":
+                print("""You manage to escape, but you are very cold. Lost 20 Energy.""")
+                character_statistics["Energy"] -= 20
+            return
+        elif int(choice_event28) == 2:
+            print("""Mined ice. Gained 5 XP.""")
+            character_statistics["XP"] += 5
+            return
+        elif int(choice_event28) == 3:
+            print("""Sealed. Nothing happens.""")
+            return
+        elif int(choice_event28) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event28) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Jungle Event - Tribal Encounter
+def trigger_event29():
+    repeat = True
+    while repeat == True:
+        print("""Jungle tribesmen approach.
+1. Trade
+2. Fight
+3. Hide
+4. Stats
+5. Inventory
+""")
+        choice_event29 = input()
+        if int(choice_event29) == 1:
+            if inventory["Money"] >= 5:
+                print("""Traded. Gained potion. Lost 5 Money.""")
+                inventory["Money"] -= 5
+                # Assume potion restores HP
+                character_statistics["HP"] = min(max_HP, character_statistics["HP"] + 10)
+            else:
+                print("""No money. They leave.""")
+            return
+        elif int(choice_event29) == 2:
+            trigger_battle("orc", 0)
+            return
+        elif int(choice_event29) == 3:
+            if character_statistics["Dexterity"] > 10:
+                print("""Hidden successfully.""")
+            else:
+                print("""Found. Lost 5 HP.""")
+                character_statistics["HP"] -= 5
+            return
+        elif int(choice_event29) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event29) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Desert Event - Caravan
+def trigger_event30():
+    repeat = True
+    while repeat == True:
+        print("""A desert caravan is stranded.
+1. Help them
+2. Rob them
+3. Ignore
+4. Stats
+5. Inventory
+""")
+        choice_event30 = input()
+        if int(choice_event30) == 1:
+            print("""You help the poor stranded people. They offer you a reward!
+1. Accept gold
+2. Accept supplies""")
+            sub_choice = input()
+            if sub_choice == "1":
+                inventory["Money"] += 10
+            elif sub_choice == "2":
+                inventory["Wood"] += 2
+            return
+        elif int(choice_event30) == 2:
+            if character_statistics["Strength"] > 10:
+                print("""Robbed successfully. Gained 10 Money.""")
+                inventory["Money"] += 10
+            else:
+                print("""Failed. Lost 10 HP.""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event30) == 3:
+            print("""You pass by.""")
+            return
+        elif int(choice_event30) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event30) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Mountains Event - Summit View
+def trigger_event31():
+    repeat = True
+    while repeat == True:
+        print("""From the mountain summit, you see...
+1. A valley
+2. Another peak
+3. Descend
+4. Stats
+5. Inventory
+""")
+        choice_event31 = input()
+        if int(choice_event31) == 1:
+            print("""Valley has a village.
+1. Visit
+2. Avoid""")
+            sub_choice = input()
+            if sub_choice == "1":
+                enter_setting("Plains")
+            elif sub_choice == "2":
+                print("""Avoided.""")
+            return
+        elif int(choice_event31) == 2:
+            print("""Climb higher? 
+1. Yes
+2. No""")
+            sub_choice = input()
+            if sub_choice == "1" and character_statistics["Strength"] > 15:
+                print("""Reached top. Gained 10 XP.""")
+                character_statistics["XP"] += 10
+            else:
+                print("""Too hard. Lost 5 Energy.""")
+                character_statistics["Energy"] -= 5
+            return
+        elif int(choice_event31) == 3:
+            print("""Descended safely.""")
+            return
+        elif int(choice_event31) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event31) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Forest Event - Mushroom Circle
+def trigger_event32():
+    repeat = True
+    while repeat == True:
+        print("""A circle of glowing mushrooms.
+1. Eat one
+2. Study them
+3. Destroy
+4. Stats
+5. Inventory
+""")
+        choice_event32 = input()
+        if int(choice_event32) == 1:
+            fate = random.randint(1, 3)
+            if fate == 1:
+                print("""Poisoned. Lost 10 HP.""")
+                character_statistics["HP"] -= 10
+            elif fate == 2:
+                print("""Hallucinations. Lost 10 Morale.""")
+                character_statistics["Morale"] -= 10
+            elif fate == 3:
+                print("""Boosted magic. Mana +10.""")
+                character_statistics["Mana"] += 10
+            return
+        elif int(choice_event32) == 2:
+            if character_statistics["Intellect"] > 10:
+                print("""Learned spell. Gained 5 XP.""")
+                character_statistics["XP"] += 5
+            else:
+                print("""Confused. Nothing.""")
+            return
+        elif int(choice_event32) == 3:
+            print("""Destroyed. Nothing happens.""")
+            return
+        elif int(choice_event32) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event32) == 5:
+            check_inventory()
+            repeat = True
+        else:
+            print("""Please type a number between 1 and 5.""")
+            repeat = True
+
+# Plains Event - Abandoned Farm
+def trigger_event33():
+    repeat = True
+    while repeat == True:
+        print("""An abandoned farm.
+1. Search house
+2. Check barn
+3. Rest
+4. Stats
+5. Inventory
+""")
+        choice_event33 = input()
+        if int(choice_event33) == 1:
+            print("""Inside, find...
+1. Food
+2. Trap""")
+            sub_choice = input()
+            if sub_choice == "1":
+                print("""Ate food. Energy restored.""")
+                character_statistics["Energy"] = 100
+            elif sub_choice == "2":
+                print("""Trap! Lost 10 HP.""")
+                character_statistics["HP"] -= 10
+            return
+        elif int(choice_event33) == 2:
+            print("""Barn has tools. Gained 2 Wood.""")
+            inventory["Wood"] += 2
+            return
+        elif int(choice_event33) == 3:
+            print("""Rested. HP +5.""")
+            character_statistics["HP"] = min(max_HP, character_statistics["HP"] + 5)
+            return
+        elif int(choice_event33) == 4:
+            print_stats()
+            repeat = True
+        elif int(choice_event33) == 5:
+            check_inventory()
+            repeat = True
         else:
             print("""Please type a number between 1 and 5.""")
             repeat = True
@@ -2786,12 +3889,14 @@ enemy_stats = {
     "Magic": 1
 }
 
+# Shop prices
 purchase_price = {
     "Wood": 2,
     "Iron": 3,
     "Gold": 5
 }
 
+# Sell price always lower than purchase price
 sell_price = {
     "Wood": 1,
     "Iron": 2,
@@ -2926,7 +4031,7 @@ weapons = {
 
 spells = {
     # Air / Wind
-    "Wind Spell": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "none"},
+    "Wind Spell": {"damage": random.randint(5, 8), "hit_chance": 95, "mana_cost": 1, "special_power": "none"},
     "Gust": {"damage": random.randint(8, 15), "hit_chance": 70, "mana_cost": 2, "special_power": "none"},
     "Hurricane": {"damage": random.randint(25, 35), "hit_chance": 50, "mana_cost": 8, "special_power": "stun"},
     "Whirlwind": {"damage": random.randint(18, 28), "hit_chance": 65, "mana_cost": 5, "special_power": "none"},
@@ -2940,10 +4045,10 @@ spells = {
     "Frozen Shards": {"damage": random.randint(18, 24), "hit_chance": 70, "mana_cost": 5, "special_power": "bleed"},
 
     # Lightning
-    "Lightning Bolt": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "shock"},
+    "Lightning Bolt": {"damage": random.randint(15, 20), "hit_chance": 75, "mana_cost": 3, "special_power": "stun"},
     "Thunder Strike": {"damage": random.randint(20, 30), "hit_chance": 65, "mana_cost": 5, "special_power": "stun"},
-    "Charge Blast": {"damage": random.randint(15, 25), "hit_chance": 70, "mana_cost": 6, "special_power": "shock"},
-    "Storm Surge": {"damage": random.randint(25, 35), "hit_chance": 55, "mana_cost": 7, "special_power": "shock"},
+    "Charge Blast": {"damage": random.randint(15, 25), "hit_chance": 70, "mana_cost": 6, "special_power": "stun"},
+    "Storm Surge": {"damage": random.randint(25, 35), "hit_chance": 55, "mana_cost": 7, "special_power": "stun"},
     "Ball Lightning": {"damage": random.randint(18, 26), "hit_chance": 65, "mana_cost": 5, "special_power": "fire"},
 
     # Fire
@@ -3029,7 +4134,6 @@ we know you can set us free from the tyrannical king NAME
 You begin the game with 10 Strength and a Sturdy Sword""")
         character_statistics["Strength"] += 10
         player_weapons[0] = "Sturdy Sword"
-        player_weapons[1] = "Sun Blade"
         break
     elif chosen_class == 2:
         print("""Ah, a mage! A mind like a tempest, and a desire burning like fire!
@@ -3038,7 +4142,7 @@ we know you can set us free from the tyrannical king NAME
             
 You begin the game with 10 Magic, a Sturdy Sword, and a simple Wind Spell""")
         max_Mana == 30
-        character_statistics["Mana"] = max_Mana
+        character_statistics["Mana"] = 30
         character_statistics["Magic"] += 10
         current_spells["Wind Spell"] = 1
         player_weapons[0] = "Wooden Staff"
@@ -3060,13 +4164,16 @@ You begin the game with 10 Defense and a Rusty Sword""")
 # Gameplay Loop
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-weapon_get()
-trigger_battle("goblin", 0)
 does_game_end()
 level_up()
 
 continue_game = True
 while continue_game == True:
+    if random.randint(1, 100) < 15:
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        trigger_shop()
+        does_game_end()
+        level_up()
     if setting["Forest"] == True:
         next_event = random.randint(1, 10)
         if next_event == 1:
@@ -3076,27 +4183,27 @@ while continue_game == True:
             level_up()
         if next_event == 2:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event2()
+            trigger_event7()
             does_game_end()
             level_up()
         if next_event == 3:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event2()
+            trigger_event8()
             does_game_end()
             level_up()
         if next_event == 4:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event2()
+            trigger_event14()
             does_game_end()
             level_up()
         if next_event == 5:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event2()
+            trigger_event22()
             does_game_end()
             level_up()
         if next_event == 6:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event7()
+            trigger_event24()
             does_game_end()
             level_up()
         if next_event == 7:
@@ -3111,12 +4218,12 @@ while continue_game == True:
             level_up()
         if next_event == 9:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event8()
+            trigger_event14()
             does_game_end()
             level_up()
         if next_event == 10:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event8()
+            trigger_event32()
             does_game_end()
             level_up()
 
@@ -3164,12 +4271,12 @@ while continue_game == True:
             level_up()
         if next_event == 9:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event6()
+            trigger_event15()
             does_game_end()
             level_up()
         if next_event == 10:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event6()
+            trigger_event25()
             does_game_end()
             level_up()
 
@@ -3212,17 +4319,17 @@ while continue_game == True:
             level_up()
         if next_event == 8:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event9()
+            trigger_event18()
             does_game_end()
             level_up()
         if next_event == 9:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event9()
+            trigger_event18()
             does_game_end()
             level_up()
         if next_event == 10:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event9()
+            trigger_event28()
             does_game_end()
             level_up()
 
@@ -3270,12 +4377,12 @@ while continue_game == True:
             level_up()
         if next_event == 9:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event8()
+            trigger_event29()
             does_game_end()
             level_up()
         if next_event == 10:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event8()
+            trigger_event19()
             does_game_end()
             level_up()
 
@@ -3328,7 +4435,7 @@ while continue_game == True:
             level_up()
         if next_event == 10:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event10()
+            trigger_event26()
             does_game_end()
             level_up()
 
@@ -3381,7 +4488,7 @@ while continue_game == True:
             level_up()
         if next_event == 10:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event10()
+            trigger_event30()
             does_game_end()
             level_up()
 
@@ -3434,7 +4541,7 @@ while continue_game == True:
             level_up()
         if next_event == 10:
             print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            trigger_event2()
+            trigger_event31()
             does_game_end()
             level_up()
 
@@ -3487,11 +4594,11 @@ while continue_game == True:
                 level_up()
             if next_event == 9:
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                trigger_event11() 
+                trigger_event11()
                 does_game_end()
                 level_up()
             if next_event == 10:
                 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                trigger_event11()
+                trigger_event27()
                 does_game_end()
                 level_up()

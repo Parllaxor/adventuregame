@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adventure Game - Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-picture {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #ddd;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #28a745;
+            border-radius: 5px;
+        }
+
+        .level-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="profile-header">
+            <div class="profile-picture" id="profilePic">
+                🧙‍♂️
+            </div>
+            <h1 id="characterName">Warrior</h1>
+            <div class="level-info">
+                <h2>Level <span id="level">1</span></h2>
+                <p>XP: <span id="xp">0</span> / <span id="nextLevelXP">100</span></p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="xpBar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="hp">20</div>
+                <div class="stat-label">Health Points</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="hpBar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="mana">20</div>
+                <div class="stat-label">Mana Points</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="manaBar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="energy">100</div>
+                <div class="stat-label">Energy</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="energyBar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="morale">100</div>
+                <div class="stat-label">Morale</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="moraleBar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="strength">0</div>
+                <div class="stat-label">Strength</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="defense">0</div>
+                <div class="stat-label">Defense</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="magic">0</div>
+                <div class="stat-label">Magic</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="speed">0</div>
+                <div class="stat-label">Speed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="dexterity">0</div>
+                <div class="stat-label">Dexterity</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="intellect">0</div>
+                <div class="stat-label">Intellect</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="swim">0</div>
+                <div class="stat-label">Swimming</div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="index.html" class="back-button">Back to Game</a>
+        </div>
+    </div>
+
+    <script>
+        // This would be populated with actual game data
+        // For now, showing placeholder values
+        function updateProfile() {
+            // In a real implementation, this would fetch data from the game
+            const stats = {
+                name: "Warrior",
+                level: 1,
+                xp: 0,
+                maxXP: 100,
+                hp: 20,
+                maxHP: 20,
+                mana: 20,
+                maxMana: 20,
+                energy: 100,
+                maxEnergy: 100,
+                morale: 100,
+                maxMorale: 100,
+                strength: 0,
+                defense: 0,
+                magic: 0,
+                speed: 0,
+                dexterity: 0,
+                intellect: 0,
+                swim: 0
+            };
+
+            document.getElementById('characterName').textContent = stats.name;
+            document.getElementById('level').textContent = stats.level;
+            document.getElementById('xp').textContent = stats.xp;
+            document.getElementById('nextLevelXP').textContent = stats.maxXP;
+            document.getElementById('xpBar').style.width = `${(stats.xp / stats.maxXP) * 100}%`;
+
+            document.getElementById('hp').textContent = stats.hp;
+            document.getElementById('hpBar').style.width = `${(stats.hp / stats.maxHP) * 100}%`;
+
+            document.getElementById('mana').textContent = stats.mana;
+            document.getElementById('manaBar').style.width = `${(stats.mana / stats.maxMana) * 100}%`;
+
+            document.getElementById('energy').textContent = stats.energy;
+            document.getElementById('energyBar').style.width = `${(stats.energy / stats.maxEnergy) * 100}%`;
+
+            document.getElementById('morale').textContent = stats.morale;
+            document.getElementById('moraleBar').style.width = `${(stats.morale / stats.maxMorale) * 100}%`;
+
+            document.getElementById('strength').textContent = stats.strength;
+            document.getElementById('defense').textContent = stats.defense;
+            document.getElementById('magic').textContent = stats.magic;
+            document.getElementById('speed').textContent = stats.speed;
+            document.getElementById('dexterity').textContent = stats.dexterity;
+            document.getElementById('intellect').textContent = stats.intellect;
+            document.getElementById('swim').textContent = stats.swim;
+        }
+
+        // Update profile on page load
+        updateProfile();
+    </script>
+</body>
+
+</html>
