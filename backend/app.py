@@ -172,9 +172,6 @@ def trigger_merchant_caravan():
     choices = ["Trade", "Ask Directions", "Rob"]
     return text, choices
 
-# ==================== EVENTS ====================
-# Event functions return (text, choices)
-
 def trigger_pirate_attack():
     if game_state["chosen_class"] in [1, 3]:  # Warrior or Defender
         text = "You engage in combat with the pirates!\n\n1. Board the pirate boat\n2. Fire a cannon at them\n3. Jump into the water"
@@ -263,6 +260,12 @@ def trigger_dark_forest():
     """New Event: Dark cursed forest"""
     text = "The forest grows darker. Strange glowing eyes watch you from the trees.\n\n1. Investigate the eyes\n2. Light a fire\n3. Leave quickly"
     choices = ["Investigate", "Light Fire", "Leave"]
+    return text, choices
+
+def trigger_ice_fishing():
+    """"New Event: Ice fishing on a frozen lake"""
+    text = "You find a frozen lake with holes cut into the ice. A fishing rod lies nearby.\n\n1. Swim\n2. Fish\n3. Enjoy View"
+    choices = ["Swim", "Fish", "Enjoy View"]
     return text, choices
 
 # Event pool by biome
@@ -710,8 +713,25 @@ def process_choice(event_name, choice):
             return {"text": "The light frightens the creatures away. XP +10", "continue": True}
         elif choice == "Leave":
             return {"text": "You wisely leave the dark forest.", "continue": True}
+
+    elif event_name == "trigger_ice_fishing":
+        if choice == "Swim":
+            character_stats["HP"] -= 5
+            return {"text": "You swim in the icy water and get cold! HP -5", "continue": True}
+        elif choice == "Fish":
+            fate = random.randint(1, 2)
+            if fate == 1:
+                inventory["Fish"] += 1
+                return {"text": "You catch a fish! Fish +1", "continue": True}
+            else:
+                return {"text": "You don't catch anything.", "continue": True}
+        elif choice == "Enjoy View":
+            character_stats["XP"] += 5
+            return {"text": "You enjoy the view. XP +5", "continue": True}
     
     return {"text": "Unknown choice", "continue": True}
+
+
 
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
@@ -833,7 +853,7 @@ def combat_attack():
         defense_reduction = max(0, character_stats["Defense"] // 2)
         enemy_damage = max(1, enemy_damage - defense_reduction)
         
-        if enemy_hit > 30:  # Enemies have 70% hit chance
+        if enemy_hit > 20:  # Enemies have 80% hit chance
             character_stats["HP"] -= enemy_damage
             result_text += f"💥 {enemy_type} attacks! Damage: {enemy_damage}\n"
         else:
