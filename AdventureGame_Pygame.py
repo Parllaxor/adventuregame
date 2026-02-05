@@ -528,16 +528,10 @@ def handle_event_choice(choice):
                 return
             else:
                 current_text = "You let your guard down, and you are attacked by a group of pirates."
-                #trigger_pirate_attack(), implement later
-                buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
-                current_event = None
-                current_event_name = None
-                game_over = does_game_end()
-                if game_over:
-                    current_text = game_over
-                    buttons = []
-                    return
-                level_up()
+                current_event_name = "trigger_pirate_attack"
+                current_text, choices = trigger_pirate_attack()
+                buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+                current_event = handle_event_choice
                 return
         elif choice == "Ignore":
             current_text = "You decide to walk away from the ocean. Can't blame you, who knows what's in there..."

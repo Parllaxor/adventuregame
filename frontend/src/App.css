@@ -1,0 +1,33 @@
+.app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #fff;
+}
+
+.app-header {
+    background-color: #0f3460;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #e94560;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+}
+
+.biome-display {
+    font-size: 1.1rem;
+    color: #ffd700;
+    margin-top: 10px;
+}
+
+.app-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}

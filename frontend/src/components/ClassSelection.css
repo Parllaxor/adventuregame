@@ -1,0 +1,76 @@
+.class-selection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.class-container {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 40px;
+    border-radius: 15px;
+    border: 2px solid #ffd700;
+}
+
+.class-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.class-container p {
+    font-size: 1.3rem;
+    color: #ddd;
+    margin-bottom: 30px;
+}
+
+.class-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.class-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    width: 150px;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    background-color: rgba(100, 100, 100, 0.6);
+    color: #fff;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.class-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.class-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.class-desc {
+    font-size: 0.9rem;
+    color: #ffff99;
+}
+
+.warrior-btn:hover {
+    background-color: rgba(200, 0, 0, 0.7);
+}
+
+.mage-btn:hover {
+    background-color: rgba(0, 100, 200, 0.7);
+}
+
+.defender-btn:hover {
+    background-color: rgba(100, 100, 0, 0.7);
+}

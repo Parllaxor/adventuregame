@@ -4,70 +4,1087 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdventureGame Web Interface</title>
+    <title>Adventure Game</title>
     <style>
-        body {
-            background-color: #e0f7fa;
-            /* Soothing light blue */
-            font-family: Arial, sans-serif;
-            color: #333;
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Background - adjustable for art */
+        body.title-screen {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body.forest {
+            background: linear-gradient(135deg, #34a853 0%, #1e5f2c 100%);
+        }
+
+        body.ocean {
+            background: linear-gradient(135deg, #4a90e2 0%, #2c5da0 100%);
+        }
+
+        body.desert {
+            background: linear-gradient(135deg, #f5a623 0%, #d68910 100%);
+        }
+
+        body.mountain {
+            background: linear-gradient(135deg, #7b68ee 0%, #4a235a 100%);
+        }
+
+        /* Title Screen */
+        #titleScreen {
+            text-align: center;
+            color: white;
+            z-index: 1;
+        }
+
+        #titleScreen h1 {
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+        }
+
+        #titleScreen p {
+            font-size: 1.5em;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        #playButton {
+            padding: 15px 50px;
+            font-size: 1.5em;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        #playButton:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        /* Game Screen */
+        #gameScreen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            max-width: 900px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        /* Top Bar with Inventory Button */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid rgba(76, 175, 80, 0.5);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .top-bar h2 {
+            color: #fff;
+            margin: 0;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .inventory-btn,
+        .combat-btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .inventory-btn:hover,
+        .combat-btn:hover {
+            background-color: #1976D2;
+        }
+
+        /* Class Selection */
+        #classSelection {
+            display: none;
             text-align: center;
         }
 
-        h1 {
-            color: #00796b;
+        #classSelection h2 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
         }
 
-        p {
-            font-size: 18px;
-            line-height: 1.6;
+        .class-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #ffffff;
+        .class-btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .class-btn.warrior {
+            background-color: #d32f2f;
+            color: white;
+        }
+
+        .class-btn.warrior:hover {
+            background-color: #b71c1c;
+            transform: translateY(-3px);
+        }
+
+        .class-btn.mage {
+            background-color: #7c3aed;
+            color: white;
+        }
+
+        .class-btn.mage:hover {
+            background-color: #6d28d9;
+            transform: translateY(-3px);
+        }
+
+        .class-btn.defender {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .class-btn.defender:hover {
+            background-color: #1565c0;
+            transform: translateY(-3px);
+        }
+
+        /* Event Screen */
+        #eventScreen {
+            display: none;
+            text-align: center;
+        }
+
+        #eventScreen h2 {
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+
+            0%,
+            100% {
+                text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+            }
+
+            50% {
+                text-shadow: 3px 3px 15px rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        #eventText {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 240, 240, 0.95) 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            color: #1a1a1a;
+            line-height: 1.8;
+            font-size: 1.15em;
+            border: 3px solid #4caf50;
+            border-left: 6px solid #4caf50;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            position: relative;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #eventText::before {
+            content: "📜";
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            font-size: 1.5em;
+            opacity: 0.3;
+        }
+
+        .choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .choice-btn {
+            padding: 15px 25px;
+            font-size: 1.05em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice-btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .choice-btn:hover::before {
+            left: 100%;
+        }
+
+        .choice-btn:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3a8b40 100%);
+            transform: translateX(8px) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
+        }
+
+        .choice-btn:active {
+            transform: translateX(4px) translateY(0);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Combat Screen */
+        #combatScreen {
+            display: none;
+        }
+
+        .combat-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .combat-section {
+            flex: 1;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 240, 240, 0.95) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #f0f0f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .combat-section h3 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hp-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .hp-fill {
+            height: 100%;
+            background-color: #4caf50;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .mana-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .mana-fill {
+            height: 100%;
+            background-color: #2196F3;
+            transition: width 0.3s ease;
+        }
+
+        .combat-action {
+            margin: 15px 0;
+        }
+
+        .action-group {
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(33, 150, 243, 0.05) 100%);
+            border-radius: 10px;
+            border: 2px solid rgba(76, 175, 80, 0.2);
+        }
+
+        .action-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #4caf50;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .action-select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #4caf50;
+            margin-bottom: 10px;
+            background-color: white;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .combat-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        #combatLog {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.08) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            min-height: 100px;
+            margin: 20px 0;
+            color: #1a1a1a;
+            white-space: pre-wrap;
+            font-size: 1em;
+            line-height: 1.8;
+            border: 2px solid rgba(76, 175, 80, 0.3);
+            border-left: 6px solid #4caf50;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Inventory View */
+        #inventoryModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .inventory-content {
+            background-color: white;
+            margin: 5% auto;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
-            background-color: #4caf50;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
+        .close-inventory {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
             cursor: pointer;
         }
 
-        .button:hover {
-            background-color: #45a049;
+        .close-inventory:hover {
+            color: #000;
+        }
+
+        .inventory-section {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .inventory-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .inventory-item {
+            padding: 8px;
+            background-color: white;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-item.equipped {
+            background-color: #c8e6c9;
+            border: 2px solid #4caf50;
+        }
+
+        .inventory-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            background-color: #f5f5f5;
+        }
+
+        /* Stats Panel */
+        #statsPanel {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(33, 150, 243, 0.1) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 25px;
+            border: 2px solid #4caf50;
+            text-align: left;
+            color: #1a1a1a;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+        }
+
+        #statsPanel h3 {
+            margin-bottom: 15px;
+            color: #4caf50;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-item {
+            display: inline-block;
+            margin-right: 25px;
+            font-size: 1em;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .stat-item strong {
+            color: #2196F3;
+            font-weight: bold;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            color: #333;
         }
     </style>
 </head>
 
-<body>
-    <div class="container">
-        <h1>Welcome to Löwengarde Adventure</h1>
-        <p>This is the web interface for the AdventureGame. The full game is implemented in Python with Pygame for a
-            graphical experience.</p>
-        <p>To play the game, run the Python script with Pygame installed. This page provides a soothing background as
-            requested.</p>
-        <p>Features:</p>
-        <ul>
-            <li>5 button options for choices</li>
-            <li>View inventory and stats</li>
-            <li>Soothing background color</li>
-        </ul>
-        <a href="#" class="button">Start Game (Run Python Script)</a>
+<body class="title-screen">
+    <!-- Title Screen -->
+    <div id="titleScreen">
+        <h1>Löwengarde Adventure</h1>
+        <p>Embark on an epic journey through dangerous lands</p>
+        <button id="playButton">PLAY</button>
     </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen">
+        <div class="game-container">
+            <!-- Class Selection -->
+            <div id="classSelection">
+                <h2>Welcome to Löwengarde!</h2>
+                <p>An evil ogre has taken over the land. Choose your class and begin your quest to save the kingdom!</p>
+                <div class="class-buttons">
+                    <button class="class-btn warrior" data-class="1">Warrior</button>
+                    <button class="class-btn mage" data-class="2">Mage</button>
+                    <button class="class-btn defender" data-class="3">Defender</button>
+                </div>
+            </div>
+
+            <!-- Event Screen -->
+            <div id="eventScreen">
+                <div class="top-bar">
+                    <h2 id="eventTitle">Event</h2>
+                    <button class="inventory-btn" id="inventoryBtn">📦 Inventory</button>
+                </div>
+                <div id="eventText">Loading event...</div>
+                <div class="choice-buttons" id="choiceButtons"></div>
+                <div id="statsPanel">
+                    <h3>Character Stats</h3>
+                    <div id="statsContent"></div>
+                </div>
+            </div>
+
+            <!-- Combat Screen -->
+            <div id="combatScreen">
+                <div class="top-bar">
+                    <h2>⚔️ Combat</h2>
+                    <div>
+                        <button class="inventory-btn" id="combatInventoryBtn">📦 Inventory</button>
+                        <button class="combat-btn" id="fleeBtn" style="margin-left: 10px; background-color: #ff9800;">🏃
+                            Flee</button>
+                    </div>
+                </div>
+
+                <div class="combat-header">
+                    <div class="combat-section">
+                        <h3>You</h3>
+                        <div id="playerHPText">HP: 0/0</div>
+                        <div class="hp-bar">
+                            <div id="playerHPFill" class="hp-fill" style="width: 100%;">100%</div>
+                        </div>
+                        <div id="playerManaText">Mana: 0/0</div>
+                        <div class="mana-bar">
+                            <div id="playerManaFill" class="mana-fill" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="combat-section">
+                        <h3 id="enemyName">Enemy</h3>
+                        <div id="enemyHPText">HP: 0/0</div>
+                        <div class="hp-bar">
+                            <div id="enemyHPFill" class="hp-fill" style="width: 100%;">100%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="combatLog">Ready for battle!</div>
+
+                <div class="combat-action">
+                    <div class="action-group">
+                        <label>Select Weapon:</label>
+                        <select id="weaponSelect" class="action-select">
+                            <option>Loading weapons...</option>
+                        </select>
+                        <button class="combat-btn" id="attackWeaponBtn" onclick="combatAttack('weapon')">🗡️
+                            Attack</button>
+                    </div>
+
+                    <div class="action-group">
+                        <label>Select Spell:</label>
+                        <select id="spellSelect" class="action-select">
+                            <option>Loading spells...</option>
+                        </select>
+                        <button class="combat-btn" id="attackSpellBtn" onclick="combatAttack('spell')"
+                            style="background-color: #9c27b0;">✨ Cast Spell</button>
+                    </div>
+
+                    <button class="combat-btn" id="defendBtn" style="background-color: #ff6f00;"
+                        onclick="combatDefend()">🛡️ Defend</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div id="inventoryModal">
+        <div class="inventory-content">
+            <span class="close-inventory">&times;</span>
+            <h2>📦 Inventory</h2>
+
+            <div class="inventory-section">
+                <h3>Resources</h3>
+                <div id="resourcesInventory"></div>
+            </div>
+
+            <div class="inventory-section">
+                <h3>Weapons</h3>
+                <div id="weaponsInventory"></div>
+            </div>
+
+            <div class="inventory-section">
+                <h3>Spells</h3>
+                <div id="spellsInventory"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5000/api";
+
+        let gameState = {
+            screen: "title",
+            currentEventName: null,
+            playerClass: null,
+            weapons: {},
+            spells: {},
+            equippedWeapon: "Fist",
+            equippedSpell: null,
+            inCombat: false,
+            currentEnemy: null,
+            currentEnemyHP: 0,
+            playerStats: {},
+        };
+
+        // ==================== MODAL CONTROL ====================
+        const inventoryModal = document.getElementById("inventoryModal");
+        const closeBtn = document.querySelector(".close-inventory");
+
+        function openInventory() {
+            inventoryModal.style.display = "block";
+            updateInventoryDisplay();
+        }
+
+        closeBtn.addEventListener("click", () => {
+            inventoryModal.style.display = "none";
+        });
+
+        window.addEventListener("click", (e) => {
+            if (e.target === inventoryModal) {
+                inventoryModal.style.display = "none";
+            }
+        });
+
+        // ==================== EVENT LISTENERS ====================
+        document.getElementById("playButton").addEventListener("click", () => {
+            document.body.className = "forest";
+            document.getElementById("titleScreen").style.display = "none";
+            document.getElementById("gameScreen").style.display = "flex";
+            document.getElementById("classSelection").style.display = "block";
+        });
+
+        document.querySelectorAll(".class-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const classId = e.target.getAttribute("data-class");
+                await initGame(classId);
+            });
+        });
+
+        document.getElementById("inventoryBtn").addEventListener("click", openInventory);
+        document.getElementById("combatInventoryBtn").addEventListener("click", openInventory);
+
+        // ==================== GAME FUNCTIONS ====================
+        async function initGame(classId) {
+            try {
+                const response = await fetch(`${API_BASE}/init`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ chosen_class: parseInt(classId) })
+                });
+
+                const data = await response.json();
+                gameState.playerClass = classId;
+                gameState.weapons = data.weapons || {};
+                gameState.spells = data.spells || {};
+                gameState.equippedWeapon = data.equipped_weapon || "Fist";
+                gameState.equippedSpell = data.equipped_spell;
+                gameState.playerStats = data.stats;
+
+                document.getElementById("classSelection").style.display = "none";
+                document.getElementById("eventScreen").style.display = "block";
+
+                triggerNextEvent();
+            } catch (error) {
+                console.error("Error initializing game:", error);
+            }
+        }
+
+        async function triggerNextEvent() {
+            try {
+                const response = await fetch(`${API_BASE}/event`);
+                const data = await response.json();
+
+                gameState.currentEventName = data.event_name;
+                gameState.inCombat = false;
+
+                document.getElementById("combatScreen").style.display = "none";
+                document.getElementById("eventScreen").style.display = "block";
+
+                displayEvent(data);
+            } catch (error) {
+                console.error("Error triggering event:", error);
+            }
+        }
+
+        function displayEvent(eventData) {
+            document.getElementById("eventText").textContent = eventData.text;
+
+            const choiceButtons = document.getElementById("choiceButtons");
+            choiceButtons.innerHTML = "";
+
+            eventData.choices.forEach(choice => {
+                const btn = document.createElement("button");
+                btn.className = "choice-btn";
+                btn.textContent = choice;
+
+                // Check if this choice triggers combat
+                if (["goblin_fight", "pirate_attack"].includes(eventData.event_name)) {
+                    if (choice.toLowerCase().includes("fight") || choice.toLowerCase().includes("attack")) {
+                        btn.addEventListener("click", () => startCombat(choice));
+                    } else {
+                        btn.addEventListener("click", () => handleChoice(choice));
+                    }
+                } else {
+                    btn.addEventListener("click", () => handleChoice(choice));
+                }
+
+                choiceButtons.appendChild(btn);
+            });
+
+            updateStatsDisplay();
+        }
+
+        async function handleChoice(choice) {
+            try {
+                const response = await fetch(`${API_BASE}/choose`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        choice: choice,
+                        event_name: gameState.currentEventName
+                    })
+                });
+
+                const outcome = await response.json();
+                document.getElementById("eventText").textContent = outcome.text;
+                document.getElementById("choiceButtons").innerHTML = "";
+
+                const continueBtn = document.createElement("button");
+                continueBtn.className = "choice-btn";
+                continueBtn.textContent = "Continue";
+                continueBtn.addEventListener("click", triggerNextEvent);
+                document.getElementById("choiceButtons").appendChild(continueBtn);
+
+                updateStatsDisplay();
+            } catch (error) {
+                console.error("Error handling choice:", error);
+            }
+        }
+
+        // ==================== COMBAT SYSTEM ====================
+        async function startCombat(choice) {
+            try {
+                const enemies = ["Goblin", "Orc", "Pirate"];
+                const randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
+
+                const response = await fetch(`${API_BASE}/start-combat`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enemy_type: randomEnemy })
+                });
+
+                const data = await response.json();
+                gameState.inCombat = true;
+                gameState.currentEnemy = data.enemy;
+                gameState.currentEnemyHP = data.enemy_hp;
+
+                document.getElementById("eventScreen").style.display = "none";
+                document.getElementById("combatScreen").style.display = "block";
+
+                populateCombatSelects();
+                updateCombatDisplay();
+
+                document.getElementById("combatLog").textContent = data.message;
+            } catch (error) {
+                console.error("Error starting combat:", error);
+            }
+        }
+
+        function populateCombatSelects() {
+            // Populate weapons
+            const weaponSelect = document.getElementById("weaponSelect");
+            weaponSelect.innerHTML = "";
+            Object.keys(gameState.weapons).forEach(weapon => {
+                const option = document.createElement("option");
+                option.value = weapon;
+                option.textContent = weapon;
+                if (weapon === gameState.equippedWeapon) option.selected = true;
+                weaponSelect.appendChild(option);
+            });
+
+            // Populate spells
+            const spellSelect = document.getElementById("spellSelect");
+            spellSelect.innerHTML = "";
+            if (Object.keys(gameState.spells).length === 0) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "No spells available";
+                spellSelect.appendChild(option);
+            } else {
+                Object.keys(gameState.spells).forEach(spell => {
+                    const option = document.createElement("option");
+                    option.value = spell;
+                    option.textContent = spell;
+                    if (spell === gameState.equippedSpell) option.selected = true;
+                    spellSelect.appendChild(option);
+                });
+            }
+        }
+
+        async function combatAttack(type) {
+            try {
+                const action = type === "weapon"
+                    ? document.getElementById("weaponSelect").value
+                    : document.getElementById("spellSelect").value;
+
+                if (!action) {
+                    alert("Please select a " + type);
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/combat-attack`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ type: type, action: action })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+
+                gameState.playerStats.HP = data.player_hp;
+                gameState.playerStats.Mana = data.player_mana;
+                gameState.currentEnemyHP = data.enemy_hp;
+
+                let log = document.getElementById("combatLog").textContent || "";
+                log += "\n" + data.action_text.trim();
+                document.getElementById("combatLog").textContent = log;
+
+                updateCombatDisplay();
+
+                if (data.combat_end) {
+                    document.getElementById("combatLog").textContent += "\n\n" + data.end_message;
+                    disableCombatButtons();
+
+                    setTimeout(() => {
+                        const continueBtn = document.createElement("button");
+                        continueBtn.className = "choice-btn";
+                        continueBtn.textContent = "Continue Adventure";
+                        continueBtn.addEventListener("click", triggerNextEvent);
+                        document.getElementById("choiceButtons").innerHTML = "";
+                        document.getElementById("choiceButtons").appendChild(continueBtn);
+
+                        document.getElementById("combatScreen").style.display = "none";
+                        document.getElementById("eventScreen").style.display = "block";
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error("Error in combat:", error);
+            }
+        }
+
+        function combatDefend() {
+            document.getElementById("combatLog").textContent += "\n🛡️ You take a defensive stance, reducing incoming damage by 50%!";
+            document.getElementById("attackWeaponBtn").disabled = true;
+            document.getElementById("attackSpellBtn").disabled = true;
+            document.getElementById("defendBtn").disabled = true;
+
+            setTimeout(() => {
+                document.getElementById("attackWeaponBtn").disabled = false;
+                document.getElementById("attackSpellBtn").disabled = false;
+                document.getElementById("defendBtn").disabled = false;
+            }, 1500);
+        }
+
+        function disableCombatButtons() {
+            document.getElementById("attackWeaponBtn").disabled = true;
+            document.getElementById("attackSpellBtn").disabled = true;
+            document.getElementById("defendBtn").disabled = true;
+            document.getElementById("fleeBtn").disabled = true;
+        }
+
+        function updateCombatDisplay() {
+            const playerHP = gameState.playerStats.HP;
+            const maxPlayerHP = gameState.playerStats.max_HP;
+            const playerMana = gameState.playerStats.Mana;
+            const maxMana = gameState.playerStats.max_Mana;
+            const enemyHP = gameState.currentEnemyHP;
+
+            document.getElementById("playerHPText").textContent = `HP: ${playerHP}/${maxPlayerHP}`;
+            document.getElementById("playerManaText").textContent = `Mana: ${playerMana}/${maxMana}`;
+            document.getElementById("enemyHPText").textContent = `HP: ${enemyHP}/100`;
+            document.getElementById("enemyName").textContent = gameState.currentEnemy;
+
+            const playerHPPercent = Math.max(0, (playerHP / maxPlayerHP) * 100);
+            const enemyHPPercent = Math.max(0, (enemyHP / 100) * 100);
+
+            document.getElementById("playerHPFill").style.width = playerHPPercent + "%";
+            document.getElementById("playerHPFill").textContent = Math.round(playerHPPercent) + "%";
+
+            document.getElementById("enemyHPFill").style.width = enemyHPPercent + "%";
+            document.getElementById("enemyHPFill").textContent = Math.round(enemyHPPercent) + "%";
+
+            const manaPercent = (playerMana / maxMana) * 100;
+            document.getElementById("playerManaFill").style.width = manaPercent + "%";
+        }
+
+        // ==================== INVENTORY DISPLAY ====================
+        async function equipWeapon(weaponName) {
+            try {
+                const response = await fetch(`${API_BASE}/equip-weapon`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ weapon: weaponName })
+                });
+
+                if (response.ok) {
+                    gameState.equippedWeapon = weaponName;
+                    updateInventoryDisplay();
+                } else {
+                    console.error("Failed to equip weapon");
+                }
+            } catch (error) {
+                console.error("Error equipping weapon:", error);
+            }
+        }
+
+        async function updateInventoryDisplay() {
+            try {
+                const response = await fetch(`${API_BASE}/inventory`);
+                const data = response.ok ? await response.json() : null;
+
+                if (!data) return;
+
+                const resources = data.resources || {};
+                const weapons = data.weapons || {};
+                const spells = data.spells || {};
+
+                // Resources
+                let resourcesHTML = "";
+                Object.entries(resources).forEach(([key, value]) => {
+                    resourcesHTML += `<div class="inventory-item">
+                        <strong>${key}:</strong> ${value}
+                    </div>`;
+                });
+                document.getElementById("resourcesInventory").innerHTML = resourcesHTML || "<div>No resources</div>";
+
+                // Weapons
+                let weaponsHTML = "";
+                Object.entries(weapons).forEach(([name, stats]) => {
+                    const isEquipped = name === data.equipped_weapon;
+                    weaponsHTML += `<div class="inventory-item ${isEquipped ? 'equipped' : ''}" onclick="equipWeapon('${name}')" style="cursor: pointer;">
+                        <strong>${name}</strong>${isEquipped ? ' (Equipped)' : ''}<br>
+                        <small>Damage: ${stats.damage[0]}-${stats.damage[1]}, Rarity: ${stats.rarity}</small>
+                    </div>`;
+                });
+                document.getElementById("weaponsInventory").innerHTML = weaponsHTML || "<div>No weapons</div>";
+
+                // Spells
+                let spellsHTML = "";
+                Object.entries(spells).forEach(([name, stats]) => {
+                    const isEquipped = name === data.equipped_spell;
+                    spellsHTML += `<div class="inventory-item ${isEquipped ? 'equipped' : ''}">
+                        <strong>${name}</strong>${isEquipped ? ' (Equipped)' : ''}<br>
+                        <small>Damage: ${stats.damage[0]}-${stats.damage[1]}, Mana Cost: ${stats.mana_cost}</small>
+                    </div>`;
+                });
+                document.getElementById("spellsInventory").innerHTML = spellsHTML || "<div>No spells</div>";
+            } catch (error) {
+                console.error("Error updating inventory:", error);
+            }
+        }
+
+        async function updateStatsDisplay() {
+            try {
+                const response = await fetch(`${API_BASE}/game-state`);
+                const data = await response.json();
+
+                gameState.playerStats = data.stats;
+                gameState.weapons = data.weapons || {};
+                gameState.spells = data.spells || {};
+
+                const stats = data.stats;
+
+                let statsHTML = `
+                    <div class="stat-item"><strong>HP:</strong> ${stats.HP}/${stats.max_HP}</div>
+                    <div class="stat-item"><strong>Mana:</strong> ${stats.Mana}/${stats.max_Mana}</div>
+                    <div class="stat-item"><strong>XP:</strong> ${stats.XP}</div>
+                    <div class="stat-item"><strong>Level:</strong> ${stats.Level}</div>
+                    <div class="stat-item"><strong>STR:</strong> ${stats.Strength}</div>
+                    <div class="stat-item"><strong>DEF:</strong> ${stats.Defense}</div>
+                    <div class="stat-item"><strong>MAG:</strong> ${stats.Magic}</div>
+                `;
+
+                document.getElementById("statsContent").innerHTML = statsHTML;
+            } catch (error) {
+                console.error("Error updating stats:", error);
+            }
+        }
+    </script>
 </body>
 
 </html>
-</content>
-<parameter name="filePath">index.html
