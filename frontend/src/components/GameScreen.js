@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./GameScreen.css";
+import LevelUpScreen from "./LevelUpScreen";
 
 function GameScreen({
   gameState,
@@ -12,6 +13,8 @@ function GameScreen({
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("Loading...");
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [levelUpData, setLevelUpData] = useState(null);
 
   useEffect(() => {
     // Load first event when component mounts
@@ -44,19 +47,26 @@ function GameScreen({
         }),
       });
       const outcome = await response.json();
-      setMessage(outcome.text);
+      
+      // Check if this is a level up
+      if (outcome.is_level_up) {
+        setLevelUpData(outcome);
+        setShowLevelUp(true);
+      } else {
+        setMessage(outcome.text);
+        
+        // Refresh stats after choice
+        const statsResponse = await fetch("http://localhost:5000/api/game-state");
+        const gameData = await statsResponse.json();
+        setStats(gameData.stats);
+        setGameState(gameData.game_state);
+        setInventory(gameData.inventory);
 
-      // Refresh stats after choice
-      const statsResponse = await fetch("http://localhost:5000/api/game-state");
-      const gameData = await statsResponse.json();
-      setStats(gameData.stats);
-      setGameState(gameData.game_state);
-      setInventory(gameData.inventory);
-
-      // Auto-load next event after showing outcome
-      setTimeout(() => {
-        triggerEvent();
-      }, 2000);
+        // Auto-load next event after showing outcome
+        setTimeout(() => {
+          triggerEvent();
+        }, 2000);
+      }
     } catch (error) {
       console.error("Error handling choice:", error);
       setMessage("Error processing choice");
@@ -64,14 +74,86 @@ function GameScreen({
     setLoading(false);
   };
 
+  const handleLevelUpContinue = async () => {
+    setShowLevelUp(false);
+    setMessage(levelUpData.text);
+    
+    // Refresh stats after level up
+    const statsResponse = await fetch("http://localhost:5000/api/game-state");
+    const gameData = await statsResponse.json();
+    setStats(gameData.stats);
+    setGameState(gameData.game_state);
+    setInventory(gameData.inventory);
+
+    // Auto-load next event after short delay
+    setTimeout(() => {
+      triggerEvent();
+    }, 2000);
+  };
+
   return (
     <div className="game-screen">
+      {/* Level Up Screen */}
+      {showLevelUp && levelUpData && (
+        <LevelUpScreen
+          newLevel={levelUpData.new_level}
+          statIncreases={levelUpData.stat_increases}
+          newStats={levelUpData.new_stats}
+          onContinue={handleLevelUpContinue}
+        />
+      )}
+
       <div className="game-content">
         {/* Stats Bar */}
         <div className="stats-bar">
-          <div className="stat">❤️ HP: {stats.HP}/{stats.max_HP}</div>
-          <div className="stat">💎 XP: {stats.XP}</div>
-          <div className="stat">⚡ Mana: {stats.Mana}</div>
+          <div className="stat-badge">
+            <span className="stat-emoji">⭐</span>
+            <span className="stat-label">Lvl</span>
+            <span className="stat-val">{stats.Level}</span>
+          </div>
+
+          <div className="stat-badge">
+            <span className="stat-emoji">💎</span>
+            <span className="stat-label">XP</span>
+            <span className="stat-val">{stats.XP}</span>
+          </div>
+
+          <div className="stat-badge">
+            <span className="stat-emoji">❤️</span>
+            <span className="stat-label">HP</span>
+            <span className="stat-val">{stats.HP}/{stats.max_HP}</span>
+          </div>
+
+          <div className="stat-badge">
+            <span className="stat-emoji">⚡</span>
+            <span className="stat-label">Mana</span>
+            <span className="stat-val">{stats.Mana}</span>
+          </div>
+
+          <div className="stat-badge">
+            <span className="stat-emoji">🎯</span>
+            <span className="stat-label">Dex</span>
+            <span className="stat-val">{stats.Dexterity}</span>
+          </div>
+
+          <div className="stat-badge">
+            <span className="stat-emoji">⚡</span>
+            <span className="stat-label">Spd</span>
+            <span className="stat-val">{stats.Speed}</span>
+          </div>
+
+          <div className="stat-badge">
+            <span className="stat-emoji">🌊</span>
+            <span className="stat-label">Swim</span>
+            <span className="stat-val">{stats.Swim}</span>
+          </div>
+
+          <div className="stat-badge">
+            <span className="stat-emoji">🧠</span>
+            <span className="stat-label">Int</span>
+            <span className="stat-val">{stats.Intellect}</span>
+          </div>
+
           <button className="mini-btn" onClick={onShowStats}>
             Full Stats
           </button>

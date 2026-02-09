@@ -21,7 +21,7 @@
             align-items: center;
         }
 
-        /* Background - adjustable for art */
+        /* Background - Solid colors matching React design */
         body.title-screen {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
@@ -90,56 +90,64 @@
             position: absolute;
             top: 0;
             left: 0;
+            overflow-y: auto;
+            padding: 20px;
         }
 
         .game-container {
             background-color: rgba(255, 255, 255, 0.95);
-            padding: 40px;
+            padding: 30px;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            max-width: 900px;
-            width: 90%;
-            max-height: 85vh;
+            max-width: 1000px;
+            width: 100%;
+            max-height: 90vh;
             overflow-y: auto;
         }
 
-        /* Top Bar with Inventory Button */
+        /* Top Bar */
         .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid rgba(76, 175, 80, 0.5);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
             padding: 15px;
+            background: white;
+            border-bottom: 3px solid #4caf50;
             border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .top-bar h2 {
-            color: #fff;
+            color: #1a1a1a;
             margin: 0;
             font-size: 1.5em;
             text-transform: uppercase;
             letter-spacing: 1px;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
         }
 
-        .inventory-btn,
-        .combat-btn {
+        .inventory-btn {
             padding: 10px 20px;
             font-size: 1em;
-            background-color: #2196F3;
+            background: linear-gradient(135deg, #2196F3 0%, #1e88e5 100%);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
         }
 
-        .inventory-btn:hover,
-        .combat-btn:hover {
-            background-color: #1976D2;
+        .inventory-btn:hover {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+        }
+
+        .inventory-btn:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 6px rgba(33, 150, 243, 0.3);
         }
 
         /* Class Selection */
@@ -156,7 +164,7 @@
 
         .class-buttons {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             gap: 20px;
             flex-wrap: wrap;
             margin-top: 20px;
@@ -171,11 +179,11 @@
             transition: all 0.3s ease;
             font-weight: bold;
             min-width: 120px;
+            color: white;
         }
 
         .class-btn.warrior {
             background-color: #d32f2f;
-            color: white;
         }
 
         .class-btn.warrior:hover {
@@ -185,7 +193,6 @@
 
         .class-btn.mage {
             background-color: #7c3aed;
-            color: white;
         }
 
         .class-btn.mage:hover {
@@ -195,7 +202,6 @@
 
         .class-btn.defender {
             background-color: #1976d2;
-            color: white;
         }
 
         .class-btn.defender:hover {
@@ -206,45 +212,19 @@
         /* Event Screen */
         #eventScreen {
             display: none;
-            text-align: center;
-        }
-
-        #eventScreen h2 {
-            color: #fff;
-            margin-bottom: 20px;
-            font-size: 2em;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            animation: titlePulse 2s ease-in-out infinite;
-        }
-
-        @keyframes titlePulse {
-
-            0%,
-            100% {
-                text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
-            }
-
-            50% {
-                text-shadow: 3px 3px 15px rgba(255, 255, 255, 0.5);
-            }
         }
 
         #eventText {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 240, 240, 0.95) 100%);
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             color: #1a1a1a;
             line-height: 1.8;
-            font-size: 1.15em;
+            font-size: 1.05em;
             border: 3px solid #4caf50;
             border-left: 6px solid #4caf50;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             animation: slideIn 0.5s ease-out;
         }
 
@@ -260,62 +240,83 @@
             }
         }
 
-        #eventText::before {
-            content: "📜";
-            position: absolute;
-            left: 15px;
-            top: 15px;
-            font-size: 1.5em;
-            opacity: 0.3;
-        }
-
         .choice-buttons {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin-top: 30px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .choice-btn {
-            padding: 15px 25px;
-            font-size: 1.05em;
+            padding: 12px 20px;
+            font-size: 1em;
             font-weight: bold;
             background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .choice-btn::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .choice-btn:hover::before {
-            left: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
         }
 
         .choice-btn:hover {
             background: linear-gradient(135deg, #45a049 0%, #3a8b40 100%);
-            transform: translateX(8px) translateY(-2px);
-            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
+            transform: translateX(8px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.6);
         }
 
-        .choice-btn:active {
-            transform: translateX(4px) translateY(0);
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        /* Stats Panel - Modern styled */
+        #statsPanel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #4caf50;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #statsPanel h3 {
+            color: #4caf50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #statsContent {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-item {
+            padding: 12px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-item strong {
+            display: block;
+            color: #4caf50;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-item span {
+            display: block;
+            color: #1a1a1a;
+            font-size: 1.3em;
+            font-weight: bold;
         }
 
         /* Combat Screen */
@@ -326,115 +327,203 @@
         .combat-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
             gap: 20px;
+            margin-bottom: 30px;
         }
 
         .combat-section {
             flex: 1;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 240, 240, 0.95) 100%);
-            padding: 20px;
-            border-radius: 12px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 16px;
             text-align: center;
-            border: 2px solid #f0f0f0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 3px solid #dee2e6;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 3px rgba(255, 255, 255, 0.6);
+            transition: transform 0.2s ease;
+        }
+
+        .combat-section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2), inset 0 1px 3px rgba(255, 255, 255, 0.6);
         }
 
         .combat-section h3 {
-            font-size: 1.3em;
-            margin-bottom: 10px;
-            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #2c3e50;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            font-weight: 700;
+            letter-spacing: 2px;
         }
 
         .hp-bar {
             width: 100%;
-            height: 30px;
-            background-color: #ddd;
-            border-radius: 5px;
-            margin: 10px 0;
+            height: 35px;
+            background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
+            border-radius: 8px;
+            margin: 15px 0 10px 0;
             overflow: hidden;
+            border: 2px solid #999;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         .hp-fill {
             height: 100%;
-            background-color: #4caf50;
-            transition: width 0.3s ease;
+            background: linear-gradient(90deg, #4caf50 0%, #45a049 50%, #3d8b40 100%);
+            transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
+            font-size: 1em;
+            text-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .hp-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%, rgba(0, 0, 0, 0.1) 100%);
+            pointer-events: none;
         }
 
         .mana-bar {
             width: 100%;
-            height: 20px;
-            background-color: #ddd;
-            border-radius: 5px;
+            height: 22px;
+            background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
+            border-radius: 6px;
             margin: 10px 0;
             overflow: hidden;
+            border: 2px solid #666;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .mana-fill {
             height: 100%;
-            background-color: #2196F3;
-            transition: width 0.3s ease;
-        }
-
-        .combat-action {
-            margin: 15px 0;
+            background: linear-gradient(90deg, #2196F3 0%, #1e88e5 50%, #1565c0 100%);
+            transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
         .action-group {
             margin: 15px 0;
-            padding: 15px;
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(33, 150, 243, 0.05) 100%);
-            border-radius: 10px;
-            border: 2px solid rgba(76, 175, 80, 0.2);
+            padding: 18px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eff8 100%);
+            border-radius: 12px;
+            border: 3px solid #4caf50;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .action-group:hover {
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.25);
+            border-color: #45a049;
         }
 
         .action-group label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             font-weight: bold;
-            color: #4caf50;
+            color: #2c3e50;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.9em;
+            letter-spacing: 1px;
         }
 
         .action-select {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
             border: 2px solid #4caf50;
-            margin-bottom: 10px;
-            background-color: white;
-            color: #333;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+            color: #2c3e50;
             font-weight: 500;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .action-select:hover {
+            border-color: #45a049;
+            background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+        }
+
+        .action-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1), 0 0 0 2px #4caf50;
         }
 
         .combat-btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px 16px;
             margin-top: 10px;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+        }
+
+        /* Default green for attack buttons without inline color */
+        .combat-btn:not([style*="background-color"]) {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        /* Colored buttons with inline styles */
+        .combat-btn[style*="background-color"] {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .combat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .combat-btn:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
 
         #combatLog {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.08) 100%);
-            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 18px;
             border-radius: 12px;
             min-height: 100px;
-            margin: 20px 0;
-            color: #1a1a1a;
+            margin: 25px 0;
+            color: #2c3e50;
             white-space: pre-wrap;
-            font-size: 1em;
-            line-height: 1.8;
-            border: 2px solid rgba(76, 175, 80, 0.3);
-            border-left: 6px solid #4caf50;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-            animation: fadeIn 0.5s ease-out;
+            font-size: 0.95em;
+            border: 2px solid #dee2e6;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        /* Inventory Modal */
+        #inventoryModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s ease-out;
         }
 
         @keyframes fadeIn {
@@ -447,42 +536,38 @@
             }
         }
 
-        /* Inventory View */
-        #inventoryModal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
         .inventory-content {
             background-color: white;
             margin: 5% auto;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 12px;
             max-width: 600px;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .close-inventory {
             float: right;
             font-size: 28px;
             font-weight: bold;
-            color: #aaa;
+            color: #999;
             cursor: pointer;
+            transition: color 0.2s;
         }
 
         .close-inventory:hover {
             color: #000;
         }
 
+        .inventory-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
         .inventory-section {
-            margin: 15px 0;
+            margin: 20px 0;
             padding: 15px;
             background-color: #f9f9f9;
             border-radius: 8px;
@@ -491,22 +576,20 @@
 
         .inventory-section h3 {
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .inventory-item {
-            padding: 8px;
+            padding: 10px;
             background-color: white;
-            margin: 5px 0;
-            border-radius: 5px;
+            margin: 8px 0;
+            border-radius: 6px;
             border: 1px solid #ddd;
             cursor: pointer;
             transition: all 0.2s ease;
-        }
-
-        .inventory-item.equipped {
-            background-color: #c8e6c9;
-            border: 2px solid #4caf50;
         }
 
         .inventory-item:hover {
@@ -515,40 +598,218 @@
             background-color: #f5f5f5;
         }
 
-        /* Stats Panel */
-        #statsPanel {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(33, 150, 243, 0.1) 100%);
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 25px;
+        .inventory-item.equipped {
+            background-color: #c8e6c9;
             border: 2px solid #4caf50;
-            text-align: left;
-            color: #1a1a1a;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
-        }
-
-        #statsPanel h3 {
-            margin-bottom: 15px;
-            color: #4caf50;
-            font-size: 1.2em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .stat-item {
-            display: inline-block;
-            margin-right: 25px;
-            font-size: 1em;
-            margin-bottom: 8px;
-            padding: 8px 12px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 6px;
-            border-left: 4px solid #4caf50;
-        }
-
-        .stat-item strong {
-            color: #2196F3;
             font-weight: bold;
+        }
+
+        .inventory-item small {
+            display: block;
+            color: #666;
+            margin-top: 4px;
+            font-size: 0.9em;
+        }
+
+        /* Level Up Modal */
+        #levelUpModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .level-up-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 10% auto;
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            color: white;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .level-up-content h2 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .level-up-content p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: #f0f0f0;
+        }
+
+        .stat-increases {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-increase-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 1.1em;
+        }
+
+        .stat-increase-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-name {
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .stat-value {
+            color: #ffeb3b;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .continue-btn {
+            background-color: #4caf50;
+            color: white;
+            padding: 12px 40px;
+            font-size: 1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .continue-btn:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Game Over Modal */
+        #gameOverModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, #d32f2f 0%, #7f0000 100%);
+            margin: 10% auto;
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            color: white;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        .game-over-content h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-over-content p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: #f0f0f0;
+        }
+
+        .game-over-stats {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-over-stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            color: #fff;
+            font-size: 1.1em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .game-over-stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .restart-btn {
+            background-color: #4caf50;
+            color: white;
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .exit-btn {
+            background-color: #ff9800;
+            color: white;
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exit-btn:hover {
+            background-color: #f57c00;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         h1,
@@ -602,7 +863,8 @@
                     <h2>⚔️ Combat</h2>
                     <div>
                         <button class="inventory-btn" id="combatInventoryBtn">📦 Inventory</button>
-                        <button class="combat-btn" id="fleeBtn" style="margin-left: 10px; background-color: #ff9800;">🏃
+                        <button class="combat-btn" id="fleeBtn" onclick="combatFlee()"
+                            style="margin-left: 10px; background-color: #ff9800;">🏃
                             Flee</button>
                     </div>
                 </div>
@@ -680,6 +942,29 @@
         </div>
     </div>
 
+    <!-- Level Up Modal -->
+    <div id="levelUpModal">
+        <div class="level-up-content">
+            <h2>⭐ LEVEL UP! ⭐</h2>
+            <p id="levelUpText">Congratulations!</p>
+            <div class="stat-increases" id="statIncreasesContainer"></div>
+            <button class="continue-btn" onclick="continueLevelUp()">Continue</button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal">
+        <div class="game-over-content">
+            <h2>💀 GAME OVER 💀</h2>
+            <p>You have been defeated in battle!</p>
+            <div class="game-over-stats" id="finalStatsContainer"></div>
+            <div class="button-group">
+                <button class="restart-btn" onclick="restartGame()">🔄 Restart</button>
+                <button class="exit-btn" onclick="exitToMenu()">🏠 Return to Menu</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = "http://localhost:5000/api";
 
@@ -713,6 +998,15 @@
         window.addEventListener("click", (e) => {
             if (e.target === inventoryModal) {
                 inventoryModal.style.display = "none";
+            }
+            const levelUpModal = document.getElementById("levelUpModal");
+            if (e.target === levelUpModal) {
+                levelUpModal.style.display = "none";
+            }
+            const gameOverModal = document.getElementById("gameOverModal");
+            if (e.target === gameOverModal) {
+                // Don't close game over modal by clicking outside - must use buttons
+                return;
             }
         });
 
@@ -817,8 +1111,33 @@
                 });
 
                 const outcome = await response.json();
+
+                // Check if this choice triggered a battle
+                if (outcome.battle_started) {
+                    document.getElementById("eventText").textContent = outcome.text;
+                    document.getElementById("choiceButtons").innerHTML = "";
+
+                    // Start combat with scaled enemy stats
+                    setTimeout(async () => {
+                        const combatResponse = await fetch(`${API_BASE}/start-combat`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ enemy_type: outcome.enemy })
+                        });
+                        const combatData = await combatResponse.json();
+                        startCombatWithEnemy(outcome.enemy, combatData.enemy_hp, combatData.enemy_max_hp);
+                    }, 1500);
+                    return;
+                }
+
                 document.getElementById("eventText").textContent = outcome.text;
                 document.getElementById("choiceButtons").innerHTML = "";
+
+                // Check if this choice triggered a level up
+                if (outcome.is_level_up) {
+                    displayLevelUp(outcome);
+                    return;
+                }
 
                 const continueBtn = document.createElement("button");
                 continueBtn.className = "choice-btn";
@@ -830,6 +1149,121 @@
             } catch (error) {
                 console.error("Error handling choice:", error);
             }
+        }
+
+        function displayLevelUp(outcome) {
+            const levelUpModal = document.getElementById("levelUpModal");
+            const levelUpText = document.getElementById("levelUpText");
+            const statIncreasesContainer = document.getElementById("statIncreasesContainer");
+
+            // Update level up message
+            levelUpText.textContent = `You have reached Level ${outcome.new_level}!`;
+
+            // Clear and populate stat increases
+            statIncreasesContainer.innerHTML = "";
+
+            if (outcome.stat_increases) {
+                for (const [stat, change] of Object.entries(outcome.stat_increases)) {
+                    if (change.old_value !== undefined && change.new_value !== undefined) {
+                        const row = document.createElement("div");
+                        row.className = "stat-increase-row";
+
+                        const statName = document.createElement("span");
+                        statName.className = "stat-name";
+                        statName.textContent = stat;
+
+                        const statValue = document.createElement("span");
+                        statValue.className = "stat-value";
+                        const increase = change.new_value - change.old_value;
+                        statValue.textContent = `${change.old_value} → ${change.new_value} (+${increase})`;
+
+                        row.appendChild(statName);
+                        row.appendChild(statValue);
+                        statIncreasesContainer.appendChild(row);
+                    }
+                }
+            }
+
+            levelUpModal.style.display = "block";
+        }
+
+        function continueLevelUp() {
+            const levelUpModal = document.getElementById("levelUpModal");
+            levelUpModal.style.display = "none";
+            updateStatsDisplay();
+            triggerNextEvent();
+        }
+
+        function showGameOver() {
+            const gameOverModal = document.getElementById("gameOverModal");
+            const finalStatsContainer = document.getElementById("finalStatsContainer");
+
+            finalStatsContainer.innerHTML = `
+                <div class="game-over-stat-row">
+                    <span>Level:</span>
+                    <span>${gameState.playerStats.Level}</span>
+                </div>
+                <div class="game-over-stat-row">
+                    <span>Experience:</span>
+                    <span>${gameState.playerStats.XP}</span>
+                </div>
+                <div class="game-over-stat-row">
+                    <span>Gold:</span>
+                    <span>${gameState.playerStats.Money || 0}</span>
+                </div>
+                <div class="game-over-stat-row">
+                    <span>Highest HP:</span>
+                    <span>${gameState.playerStats.max_HP}</span>
+                </div>
+            `;
+
+            gameOverModal.style.display = "block";
+        }
+
+        function restartGame() {
+            // Reset to class selection
+            document.getElementById("gameOverModal").style.display = "none";
+            document.getElementById("combatScreen").style.display = "none";
+            document.getElementById("eventScreen").style.display = "none";
+            document.getElementById("classSelection").style.display = "block";
+
+            // Reset game state
+            gameState = {
+                screen: "title",
+                currentEventName: null,
+                playerClass: null,
+                weapons: {},
+                spells: {},
+                equippedWeapon: "Fist",
+                equippedSpell: null,
+                inCombat: false,
+                currentEnemy: null,
+                playerStats: {},
+            };
+        }
+
+        function exitToMenu() {
+            // Return to title screen
+            document.getElementById("gameOverModal").style.display = "none";
+            document.getElementById("combatScreen").style.display = "none";
+            document.getElementById("eventScreen").style.display = "none";
+            document.getElementById("gameScreen").style.display = "none";
+            document.getElementById("titleScreen").style.display = "flex";
+            document.body.className = "title-screen";
+
+            // Reset game state
+            gameState = {
+                screen: "title",
+                currentEventName: null,
+                playerClass: null,
+                weapons: {},
+                spells: {},
+                equippedWeapon: "Fist",
+                equippedSpell: null,
+                inCombat: false,
+                currentEnemy: null,
+                playerStats: {},
+            };
         }
 
         // ==================== COMBAT SYSTEM ====================
@@ -848,6 +1282,7 @@
                 gameState.inCombat = true;
                 gameState.currentEnemy = data.enemy;
                 gameState.currentEnemyHP = data.enemy_hp;
+                gameState.currentEnemyMaxHP = data.enemy_max_hp || data.enemy_hp;
 
                 document.getElementById("eventScreen").style.display = "none";
                 document.getElementById("combatScreen").style.display = "block";
@@ -859,6 +1294,22 @@
             } catch (error) {
                 console.error("Error starting combat:", error);
             }
+        }
+
+        function startCombatWithEnemy(enemyName, enemyHP, enemyMaxHP) {
+            // Transition to combat with specific enemy (used by event-triggered battles)
+            gameState.inCombat = true;
+            gameState.currentEnemy = enemyName;
+            gameState.currentEnemyHP = enemyHP;
+            gameState.currentEnemyMaxHP = enemyMaxHP || enemyHP; // Default to enemyHP if not provided
+
+            document.getElementById("eventScreen").style.display = "none";
+            document.getElementById("combatScreen").style.display = "block";
+
+            populateCombatSelects();
+            updateCombatDisplay();
+
+            document.getElementById("combatLog").textContent = `⚔️ You face the ${enemyName}! Battle begin!`;
         }
 
         function populateCombatSelects() {
@@ -926,7 +1377,14 @@
 
                 updateCombatDisplay();
 
-                if (data.combat_end) {
+                if (data.game_over) {
+                    document.getElementById("combatLog").textContent += "\n\n" + data.end_message;
+                    disableCombatButtons();
+
+                    setTimeout(() => {
+                        showGameOver();
+                    }, 2000);
+                } else if (data.combat_end) {
                     document.getElementById("combatLog").textContent += "\n\n" + data.end_message;
                     disableCombatButtons();
 
@@ -960,6 +1418,21 @@
             }, 1500);
         }
 
+        function combatFlee() {
+            document.getElementById("combatLog").textContent += "\n🏃 You attempt to flee from combat...";
+            document.getElementById("attackWeaponBtn").disabled = true;
+            document.getElementById("attackSpellBtn").disabled = true;
+            document.getElementById("defendBtn").disabled = true;
+            document.getElementById("fleeBtn").disabled = true;
+
+            setTimeout(() => {
+                gameState.inCombat = false;
+                document.getElementById("combatScreen").style.display = "none";
+                document.getElementById("eventScreen").style.display = "block";
+                triggerNextEvent();
+            }, 1500);
+        }
+
         function disableCombatButtons() {
             document.getElementById("attackWeaponBtn").disabled = true;
             document.getElementById("attackSpellBtn").disabled = true;
@@ -973,14 +1446,15 @@
             const playerMana = gameState.playerStats.Mana;
             const maxMana = gameState.playerStats.max_Mana;
             const enemyHP = gameState.currentEnemyHP;
+            const enemyMaxHP = gameState.currentEnemyMaxHP || 100; // Default to 100 if not set
 
             document.getElementById("playerHPText").textContent = `HP: ${playerHP}/${maxPlayerHP}`;
             document.getElementById("playerManaText").textContent = `Mana: ${playerMana}/${maxMana}`;
-            document.getElementById("enemyHPText").textContent = `HP: ${enemyHP}/100`;
+            document.getElementById("enemyHPText").textContent = `HP: ${enemyHP}/${enemyMaxHP}`;
             document.getElementById("enemyName").textContent = gameState.currentEnemy;
 
             const playerHPPercent = Math.max(0, (playerHP / maxPlayerHP) * 100);
-            const enemyHPPercent = Math.max(0, (enemyHP / 100) * 100);
+            const enemyHPPercent = Math.max(0, (enemyHP / enemyMaxHP) * 100);
 
             document.getElementById("playerHPFill").style.width = playerHPPercent + "%";
             document.getElementById("playerHPFill").textContent = Math.round(playerHPPercent) + "%";
@@ -1009,6 +1483,25 @@
                 }
             } catch (error) {
                 console.error("Error equipping weapon:", error);
+            }
+        }
+
+        async function equipSpell(spellName) {
+            try {
+                const response = await fetch(`${API_BASE}/equip-spell`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ spell: spellName })
+                });
+
+                if (response.ok) {
+                    gameState.equippedSpell = spellName;
+                    updateInventoryDisplay();
+                } else {
+                    console.error("Failed to equip spell");
+                }
+            } catch (error) {
+                console.error("Error equipping spell:", error);
             }
         }
 
@@ -1047,7 +1540,7 @@
                 let spellsHTML = "";
                 Object.entries(spells).forEach(([name, stats]) => {
                     const isEquipped = name === data.equipped_spell;
-                    spellsHTML += `<div class="inventory-item ${isEquipped ? 'equipped' : ''}">
+                    spellsHTML += `<div class="inventory-item ${isEquipped ? 'equipped' : ''}" onclick="equipSpell('${name}')" style="cursor: pointer;">
                         <strong>${name}</strong>${isEquipped ? ' (Equipped)' : ''}<br>
                         <small>Damage: ${stats.damage[0]}-${stats.damage[1]}, Mana Cost: ${stats.mana_cost}</small>
                     </div>`;
@@ -1070,13 +1563,17 @@
                 const stats = data.stats;
 
                 let statsHTML = `
-                    <div class="stat-item"><strong>HP:</strong> ${stats.HP}/${stats.max_HP}</div>
-                    <div class="stat-item"><strong>Mana:</strong> ${stats.Mana}/${stats.max_Mana}</div>
-                    <div class="stat-item"><strong>XP:</strong> ${stats.XP}</div>
-                    <div class="stat-item"><strong>Level:</strong> ${stats.Level}</div>
-                    <div class="stat-item"><strong>STR:</strong> ${stats.Strength}</div>
-                    <div class="stat-item"><strong>DEF:</strong> ${stats.Defense}</div>
-                    <div class="stat-item"><strong>MAG:</strong> ${stats.Magic}</div>
+                    <div class="stat-item"><strong>❤️ HP</strong><span>${stats.HP}/${stats.max_HP}</span></div>
+                    <div class="stat-item"><strong>💙 Mana</strong><span>${stats.Mana}/${stats.max_Mana}</span></div>
+                    <div class="stat-item"><strong>⚡ Level</strong><span>${stats.Level}</span></div>
+                    <div class="stat-item"><strong>✨ XP</strong><span>${stats.XP}</span></div>
+                    <div class="stat-item"><strong>💪 Strength</strong><span>${stats.Strength}</span></div>
+                    <div class="stat-item"><strong>🛡️ Defense</strong><span>${stats.Defense}</span></div>
+                    <div class="stat-item"><strong>🔮 Magic</strong><span>${stats.Magic}</span></div>
+                    <div class="stat-item"><strong>🎯 Dexterity</strong><span>${stats.Dexterity}</span></div>
+                    <div class="stat-item"><strong>⚡ Speed</strong><span>${stats.Speed}</span></div>
+                    <div class="stat-item"><strong>🏊 Swim</strong><span>${stats.Swim}</span></div>
+                    <div class="stat-item"><strong>🧠 Intellect</strong><span>${stats.Intellect}</span></div>
                 `;
 
                 document.getElementById("statsContent").innerHTML = statsHTML;

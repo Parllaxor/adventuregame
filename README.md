@@ -48,7 +48,7 @@
 
 ### 1. Create Event Function (Backend - app.py)
 
-In `backend/app.py`, add your event function in the **Events** section (around line 30):
+In `backend/app.py`, add your event function in the **Events** section:
 
 ```python
 def trigger_my_event():
@@ -59,7 +59,7 @@ def trigger_my_event():
 
 ### 2. Add Event Handler (Backend - app.py)
 
-In the `process_choice()` function (around line 140), add:
+In the `process_choice()` function, add:
 
 ```python
 elif event_name == "trigger_my_event":

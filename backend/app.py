@@ -3,9 +3,14 @@ from flask_cors import CORS
 import random
 import json
 import os
+import math
+import requests
 
-app = Flask(__name__, static_folder="../", static_url_path="")
+app = Flask(__name__, static_folder="", static_url_path="")
 CORS(app)
+
+# Proxy configuration for React dev server
+REACT_DEV_SERVER = "http://localhost:3000"
 
 # ==================== GAME STATE ====================
 # This stores all player data. In production, you'd use a database.
@@ -29,6 +34,10 @@ character_stats = {
     "Strength": 0,
     "Defense": 0,
     "Magic": 0,
+    "Dexterity": 0,
+    "Speed": 0,
+    "Swim": 0,
+    "Intellect": 0,
     "XP": 0,
     "Level": 1,
 }
@@ -50,52 +59,288 @@ equipped_spell = None
 
 # Weapon definitions (simplified for web version)
 WEAPONS_DB = {
-    # Legendary
-    "Reaper of the Gods": {"rarity": "Legendary", "damage": [80, 95], "hit_chance": 90, "type": "Melee", "special_power": "blind"},
-    "Sun Blade": {"rarity": "Legendary", "damage": [50, 60], "hit_chance": 80, "type": "Melee", "special_power": "fire"},
-    "Dragon Fang": {"rarity": "Legendary", "damage": [85, 100], "hit_chance": 75, "type": "Melee", "special_power": "poison"},
-    "Hammer of Titans": {"rarity": "Legendary", "damage": [90, 110], "hit_chance": 65, "type": "Melee", "special_power": "stun"},
-    "Blade of Eternity": {"rarity": "Legendary", "damage": [95, 120], "hit_chance": 85, "type": "Melee", "special_power": "stun"},
-    # Rare
-    "Bright Blade": {"rarity": "Rare", "damage": [20, 25], "hit_chance": 75, "type": "Melee", "special_power": "blind"},
-    "Storm Bow": {"rarity": "Rare", "damage": [25, 35], "hit_chance": 80, "type": "Ranged", "special_power": "shock"},
-    "Shadow Katana": {"rarity": "Rare", "damage": [28, 40], "hit_chance": 75, "type": "Melee", "special_power": "curse"},
-    "Flame Mace": {"rarity": "Rare", "damage": [30, 45], "hit_chance": 65, "type": "Melee", "special_power": "fire"},
-    # Uncommon
-    "Bronze Sword": {"rarity": "Uncommon", "damage": [14, 20], "hit_chance": 70, "type": "Melee", "special_power": "none"},
-    "Iron Mace": {"rarity": "Uncommon", "damage": [16, 22], "hit_chance": 60, "type": "Melee", "special_power": "none"},
-    # Common
-    "Iron Sword": {"rarity": "Common", "damage": [10, 20], "hit_chance": 60, "type": "Melee", "special_power": "none"},
-    "Wooden Club": {"rarity": "Common", "damage": [6, 12], "hit_chance": 65, "type": "Melee", "special_power": "none"},
-    "Fist": {"rarity": "None", "damage": [3, 3], "hit_chance": 70, "type": "Melee", "special_power": "none"},
+    # ---------------- Legendary Weapons (20) ----------------
+
+    "Reaper of the Gods": {"rarity": "Legendary", "damage": random.randint(80, 95), "hit_chance": 90, "type": "Melee", "drop_rate": 1, "special_power": "blind"},
+    "Sun Blade": {"rarity": "Legendary", "damage": random.randint(50, 60), "hit_chance": 80, "type": "Melee", "drop_rate": 5, "special_power": "fire"},
+    "Eternal Spear": {"rarity": "Legendary", "damage": random.randint(70, 85), "hit_chance": 85, "type": "Melee", "drop_rate": 3, "special_power": "shock"},
+    "Dragon Fang": {"rarity": "Legendary", "damage": random.randint(85, 100), "hit_chance": 75, "type": "Melee", "drop_rate": 2, "special_power": "poison"},
+    "Frostmourne": {"rarity": "Legendary", "damage": random.randint(80, 95), "hit_chance": 70, "type": "Melee", "drop_rate": 2, "special_power": "ice"},
+    "Celestial Bow": {"rarity": "Legendary", "damage": random.randint(60, 80), "hit_chance": 95, "type": "Ranged", "drop_rate": 4, "special_power": "blind"},
+    "Hammer of Titans": {"rarity": "Legendary", "damage": random.randint(90, 110), "hit_chance": 65, "type": "Melee", "drop_rate": 1, "special_power": "stun"},
+    "Shadow Scythe": {"rarity": "Legendary", "damage": random.randint(75, 95), "hit_chance": 80, "type": "Melee", "drop_rate": 3, "special_power": "curse"},
+    "Phoenix Staff": {"rarity": "Legendary", "damage": random.randint(55, 70), "hit_chance": 85, "type": "Magic", "drop_rate": 5, "special_power": "burn"},
+    "Blade of Eternity": {"rarity": "Legendary", "damage": random.randint(95, 120), "hit_chance": 85, "type": "Melee", "drop_rate": 1, "special_power": "stun"},
+    "Orb of Infinity": {"rarity": "Legendary", "damage": random.randint(70, 90), "hit_chance": 90, "type": "Magic", "drop_rate": 2, "special_power": "invisibility"},
+    "Lance of Light": {"rarity": "Legendary", "damage": random.randint(75, 95), "hit_chance": 88, "type": "Melee", "drop_rate": 3, "special_power": "holy"},
+    "Thunderstorm Bow": {"rarity": "Legendary", "damage": random.randint(80, 100), "hit_chance": 85, "type": "Ranged", "drop_rate": 2, "special_power": "shock"},
+    "Crownbreaker Axe": {"rarity": "Legendary", "damage": random.randint(100, 120), "hit_chance": 70, "type": "Melee", "drop_rate": 1, "special_power": "none"},
+    "Serpent Fang Dagger": {"rarity": "Legendary", "damage": random.randint(65, 80), "hit_chance": 95, "type": "Melee", "drop_rate": 4, "special_power": "poison"},
+    "Volcanic Blade": {"rarity": "Legendary", "damage": random.randint(85, 105), "hit_chance": 80, "type": "Melee", "drop_rate": 3, "special_power": "fire"},
+    "Scepter of Stars": {"rarity": "Legendary", "damage": random.randint(60, 75), "hit_chance": 90, "type": "Magic", "drop_rate": 4, "special_power": "meteor"},
+    "Wraith Scythe": {"rarity": "Legendary", "damage": random.randint(90, 105), "hit_chance": 78, "type": "Melee", "drop_rate": 2, "special_power": "vampiric"},
+    "Heaven’s Wrath": {"rarity": "Legendary", "damage": random.randint(100, 125), "hit_chance": 85, "type": "Melee", "drop_rate": 1, "special_power": "holy"},
+    "Chrono Blade": {"rarity": "Legendary", "damage": random.randint(95, 110), "hit_chance": 82, "type": "Melee", "drop_rate": 2, "special_power": "time_warp"},
+
+    # ---------------- Insane Weapons (20) ----------------
+
+    "Nuclear Mace": {"rarity": "Insane", "damage": random.randint(80, 100), "hit_chance": 40, "type": "Melee", "drop_rate": 30, "special_power": "radiation"},
+    "Blood Blade": {"rarity": "Insane", "damage": random.randint(30, 50), "hit_chance": 80, "type": "Melee", "drop_rate": 45, "special_power": "bleed"},
+    "Chaos Axe": {"rarity": "Insane", "damage": random.randint(70, 90), "hit_chance": 50, "type": "Melee", "drop_rate": 25, "special_power": "confuse"},
+    "Soul Breaker": {"rarity": "Insane", "damage": random.randint(65, 85), "hit_chance": 55, "type": "Melee", "drop_rate": 35, "special_power": "curse"},
+    "Thunder Pike": {"rarity": "Insane", "damage": random.randint(60, 80), "hit_chance": 60, "type": "Melee", "drop_rate": 30, "special_power": "shock"},
+    "Infernal Whip": {"rarity": "Insane", "damage": random.randint(50, 70), "hit_chance": 70, "type": "Melee", "drop_rate": 40, "special_power": "fire"},
+    "Darkbow": {"rarity": "Insane", "damage": random.randint(45, 65), "hit_chance": 75, "type": "Ranged", "drop_rate": 30, "special_power": "drain"},
+    "Plague Dagger": {"rarity": "Insane", "damage": random.randint(35, 50), "hit_chance": 85, "type": "Melee", "drop_rate": 50, "special_power": "poison"},
+    "Venom Fang": {"rarity": "Insane", "damage": random.randint(40, 55), "hit_chance": 70, "type": "Melee", "drop_rate": 45, "special_power": "paralyze"},
+    "Skull Crusher": {"rarity": "Insane", "damage": random.randint(80, 100), "hit_chance": 45, "type": "Melee", "drop_rate": 25, "special_power": "stun"},
+    "Madman’s Blade": {"rarity": "Insane", "damage": random.randint(55, 75), "hit_chance": 65, "type": "Melee", "drop_rate": 35, "special_power": "berserk"},
+    "Rage Spear": {"rarity": "Insane", "damage": random.randint(70, 90), "hit_chance": 60, "type": "Melee", "drop_rate": 30, "special_power": "frenzy"},
+    "Night Terror": {"rarity": "Insane", "damage": random.randint(65, 85), "hit_chance": 55, "type": "Magic", "drop_rate": 40, "special_power": "fear"},
+    "Acid Flail": {"rarity": "Insane", "damage": random.randint(60, 75), "hit_chance": 65, "type": "Melee", "drop_rate": 35, "special_power": "acid"},
+    "Toxic Scythe": {"rarity": "Insane", "damage": random.randint(75, 95), "hit_chance": 55, "type": "Melee", "drop_rate": 30, "special_power": "toxin"},
+    "Bloodfang Axe": {"rarity": "Insane", "damage": random.randint(70, 85), "hit_chance": 60, "type": "Melee", "drop_rate": 35, "special_power": "bleed"},
+    "Corrupted Bow": {"rarity": "Insane", "damage": random.randint(50, 70), "hit_chance": 70, "type": "Ranged", "drop_rate": 40, "special_power": "curse"},
+    "Soulfire Staff": {"rarity": "Insane", "damage": random.randint(45, 60), "hit_chance": 75, "type": "Magic", "drop_rate": 35, "special_power": "curse"},
+    "Ruin Blade": {"rarity": "Insane", "damage": random.randint(85, 105), "hit_chance": 50, "type": "Melee", "drop_rate": 25, "special_power": "destruction"},
+    "Howling Pike": {"rarity": "Insane", "damage": random.randint(60, 85), "hit_chance": 65, "type": "Melee", "drop_rate": 40, "special_power": "scream"},
+
+# ---------------- Rare Weapons (20) ----------------
+
+    "Bright Blade": {"rarity": "Rare", "damage": random.randint(20, 25), "hit_chance": 75, "type": "Melee", "drop_rate": 60, "special_power": "blind"},
+    "Storm Bow": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 80, "type": "Ranged", "drop_rate": 50, "special_power": "shock"},
+    "Crystal Dagger": {"rarity": "Rare", "damage": random.randint(22, 28), "hit_chance": 90, "type": "Melee", "drop_rate": 55, "special_power": "none"},
+    "Shadow Katana": {"rarity": "Rare", "damage": random.randint(28, 40), "hit_chance": 75, "type": "Melee", "drop_rate": 45, "special_power": "curse"},
+    "Flame Mace": {"rarity": "Rare", "damage": random.randint(30, 45), "hit_chance": 65, "type": "Melee", "drop_rate": 50, "special_power": "fire"},
+    "Moon Spear": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 70, "type": "Melee", "drop_rate": 55, "special_power": "freeze"},
+    "Venom Crossbow": {"rarity": "Rare", "damage": random.randint(20, 30), "hit_chance": 80, "type": "Ranged", "drop_rate": 60, "special_power": "poison"},
+    "Lava Sword": {"rarity": "Rare", "damage": random.randint(35, 45), "hit_chance": 60, "type": "Melee", "drop_rate": 40, "special_power": "fire"},
+    "Frost Wand": {"rarity": "Rare", "damage": random.randint(18, 25), "hit_chance": 85, "type": "Magic", "drop_rate": 55, "special_power": "frost"},
+    "Spirit Lance": {"rarity": "Rare", "damage": random.randint(30, 40), "hit_chance": 75, "type": "Melee", "drop_rate": 45, "special_power": "drain"},
+    "Runed Staff": {"rarity": "Rare", "damage": random.randint(20, 28), "hit_chance": 80, "type": "Magic", "drop_rate": 50, "special_power": "mana_boost"},
+    "Glacier Hammer": {"rarity": "Rare", "damage": random.randint(32, 45), "hit_chance": 65, "type": "Melee", "drop_rate": 45, "special_power": "ice"},
+    "Stormbreaker Axe": {"rarity": "Rare", "damage": random.randint(35, 50), "hit_chance": 70, "type": "Melee", "drop_rate": 40, "special_power": "shock"},
+    "Venom Fang Sword": {"rarity": "Rare", "damage": random.randint(30, 40), "hit_chance": 75, "type": "Melee", "drop_rate": 45, "special_power": "poison"},
+    "Ashen Bow": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 80, "type": "Ranged", "drop_rate": 50, "special_power": "fire"},
+    "Sunsteel Spear": {"rarity": "Rare", "damage": random.randint(28, 38), "hit_chance": 70, "type": "Melee", "drop_rate": 55, "special_power": "fire"},
+    "Cursed Dagger": {"rarity": "Rare", "damage": random.randint(22, 32), "hit_chance": 85, "type": "Melee", "drop_rate": 60, "special_power": "curse"},
+    "Echo Staff": {"rarity": "Rare", "damage": random.randint(18, 28), "hit_chance": 80, "type": "Magic", "drop_rate": 55, "special_power": "echo"},
+    "Gale Blade": {"rarity": "Rare", "damage": random.randint(25, 35), "hit_chance": 85, "type": "Melee", "drop_rate": 50, "special_power": "wind"},
+    "Ember Pike": {"rarity": "Rare", "damage": random.randint(30, 42), "hit_chance": 70, "type": "Melee", "drop_rate": 45, "special_power": "fire"},
+
+# ---------------- Uncommon Weapons (20) ----------------
+
+    "Frozen Blade": {"rarity": "Uncommon", "damage": random.randint(17, 23), "hit_chance": 60, "type": "Melee", "drop_rate": 80, "special_power": "ice"},
+    "Oak Bow": {"rarity": "Uncommon", "damage": random.randint(12, 20), "hit_chance": 70, "type": "Ranged", "drop_rate": 75, "special_power": "none"},
+    "Stone Axe": {"rarity": "Uncommon", "damage": random.randint(15, 22), "hit_chance": 65, "type": "Melee", "drop_rate": 70, "special_power": "none"},
+    "Bronze Sword": {"rarity": "Uncommon", "damage": random.randint(14, 20), "hit_chance": 70, "type": "Melee", "drop_rate": 80, "special_power": "none"},
+    "Steel Spear": {"rarity": "Uncommon", "damage": random.randint(18, 24), "hit_chance": 65, "type": "Melee", "drop_rate": 70, "special_power": "none"},
+    "Ashwood Staff": {"rarity": "Uncommon", "damage": random.randint(10, 18), "hit_chance": 75, "type": "Magic", "drop_rate": 80, "special_power": "none"},
+    "Battle Pickaxe": {"rarity": "Uncommon", "damage": random.randint(16, 22), "hit_chance": 60, "type": "Melee", "drop_rate": 75, "special_power": "none"},
+    "Crossbow": {"rarity": "Uncommon", "damage": random.randint(15, 20), "hit_chance": 70, "type": "Ranged", "drop_rate": 75, "special_power": "none"},
+    "War Dagger": {"rarity": "Uncommon", "damage": random.randint(12, 18), "hit_chance": 85, "type": "Melee", "drop_rate": 85, "special_power": "none"},
+    "Iron Mace": {"rarity": "Uncommon", "damage": random.randint(16, 22), "hit_chance": 60, "type": "Melee", "drop_rate": 80, "special_power": "none"},
+    "Spiked Club": {"rarity": "Uncommon", "damage": random.randint(14, 20), "hit_chance": 65, "type": "Melee", "drop_rate": 75, "special_power": "none"},
+    "Hunter’s Bow": {"rarity": "Uncommon", "damage": random.randint(12, 19), "hit_chance": 72, "type": "Ranged", "drop_rate": 75, "special_power": "none"},
+    "Forged Spear": {"rarity": "Uncommon", "damage": random.randint(18, 25), "hit_chance": 68, "type": "Melee", "drop_rate": 70, "special_power": "none"},
+    "Steel Dagger": {"rarity": "Uncommon", "damage": random.randint(15, 20), "hit_chance": 80, "type": "Melee", "drop_rate": 80, "special_power": "none"},
+    "Iron Pike": {"rarity": "Uncommon", "damage": random.randint(17, 23), "hit_chance": 65, "type": "Melee", "drop_rate": 75, "special_power": "none"},
+    "Runed Mace": {"rarity": "Uncommon", "damage": random.randint(16, 21), "hit_chance": 70, "type": "Melee", "drop_rate": 70, "special_power": "none"},
+    "Reinforced Staff": {"rarity": "Uncommon", "damage": random.randint(10, 16), "hit_chance": 75, "type": "Magic", "drop_rate": 80, "special_power": "none"},
+    "Wooden Bow": {"rarity": "Uncommon", "damage": random.randint(10, 15), "hit_chance": 70, "type": "Ranged", "drop_rate": 80, "special_power": "none"},
+    "Chipped Axe": {"rarity": "Uncommon", "damage": random.randint(12, 18), "hit_chance": 65, "type": "Melee", "drop_rate": 85, "special_power": "none"},
+    "Bronze Mace": {"rarity": "Uncommon", "damage": random.randint(13, 19), "hit_chance": 68, "type": "Melee", "drop_rate": 75, "special_power": "none"},
+
+# ---------------- Common Weapons (20) ----------------
+
+    "Iron Sword": {"rarity": "Common", "damage": random.randint(10, 20), "hit_chance": 60, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Sturdy Sword": {"rarity": "Common", "damage": random.randint(7, 15), "hit_chance": 70, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Rusty Sword": {"rarity": "Common", "damage": random.randint(5, 10), "hit_chance": 70, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+    "Wooden Staff": {"rarity": "Common", "damage": random.randint(5, 10), "hit_chance": 70, "type": "Magic", "drop_rate": 100, "special_power": "none"},
+    "Training Dagger": {"rarity": "Common", "damage": random.randint(3, 7), "hit_chance": 85, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+    "Farmer’s Pitchfork": {"rarity": "Common", "damage": random.randint(5, 12), "hit_chance": 60, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+    "Wooden Club": {"rarity": "Common", "damage": random.randint(6, 12), "hit_chance": 65, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Slingshot": {"rarity": "Common", "damage": random.randint(4, 9), "hit_chance": 75, "type": "Ranged", "drop_rate": 100, "special_power": "none"},
+    "Practice Sword": {"rarity": "Common", "damage": random.randint(3, 8), "hit_chance": 80, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+    "Stone Hammer": {"rarity": "Common", "damage": random.randint(6, 14), "hit_chance": 60, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Wooden Spear": {"rarity": "Common", "damage": random.randint(5, 12), "hit_chance": 65, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Copper Dagger": {"rarity": "Common", "damage": random.randint(4, 9), "hit_chance": 75, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Stone Club": {"rarity": "Common", "damage": random.randint(5, 11), "hit_chance": 65, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+    "Basic Bow": {"rarity": "Common", "damage": random.randint(6, 12), "hit_chance": 70, "type": "Ranged", "drop_rate": 100, "special_power": "none"},
+    "Iron Dagger": {"rarity": "Common", "damage": random.randint(5, 10), "hit_chance": 80, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Training Staff": {"rarity": "Common", "damage": random.randint(4, 8), "hit_chance": 75, "type": "Magic", "drop_rate": 95, "special_power": "none"},
+    "Crude Spear": {"rarity": "Common", "damage": random.randint(5, 10), "hit_chance": 65, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+    "Worn Sword": {"rarity": "Common", "damage": random.randint(6, 12), "hit_chance": 70, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Stone Spear": {"rarity": "Common", "damage": random.randint(5, 11), "hit_chance": 65, "type": "Melee", "drop_rate": 95, "special_power": "none"},
+    "Simple Club": {"rarity": "Common", "damage": random.randint(4, 9), "hit_chance": 70, "type": "Melee", "drop_rate": 100, "special_power": "none"},
+
+    #---------------- Empty Weapon (1) ----------------
+
+    "Fist": {"rarity": "None", "damage": 3, "hit_chance": 70, "type": "Melee", "drop_rate": 0, "special_power": "none"}
 }
 
 SPELLS_DB = {
-    # Wind
-    "Wind Spell": {"damage": [5, 8], "hit_chance": 95, "mana_cost": 1, "special_power": "none"},
-    "Gust": {"damage": [8, 15], "hit_chance": 70, "mana_cost": 2, "special_power": "none"},
+    # Air / Wind
+    "Wind Spell": {"damage": random.randint(5, 8), "hit_chance": 95, "mana_cost": 1, "special_power": "none"},
+    "Gust": {"damage": random.randint(8, 15), "hit_chance": 70, "mana_cost": 2, "special_power": "none"},
+    "Hurricane": {"damage": random.randint(25, 35), "hit_chance": 50, "mana_cost": 8, "special_power": "stun"},
+    "Whirlwind": {"damage": random.randint(18, 28), "hit_chance": 65, "mana_cost": 5, "special_power": "none"},
+    "Zephyr Slash": {"damage": random.randint(12, 20), "hit_chance": 75, "mana_cost": 3, "special_power": "none"},
+
     # Ice
-    "Ice Blast": {"damage": [10, 20], "hit_chance": 60, "mana_cost": 3, "special_power": "ice"},
-    "Frost Spike": {"damage": [15, 25], "hit_chance": 65, "mana_cost": 4, "special_power": "ice"},
+    "Ice Blast": {"damage": random.randint(10, 20), "hit_chance": 60, "mana_cost": 3, "special_power": "ice"},
+    "Frost Spike": {"damage": random.randint(15, 25), "hit_chance": 65, "mana_cost": 4, "special_power": "ice"},
+    "Glacier": {"damage": random.randint(30, 40), "hit_chance": 50, "mana_cost": 9, "special_power": "ice"},
+    "Snowstorm": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 6, "special_power": "blind"},
+    "Frozen Shards": {"damage": random.randint(18, 24), "hit_chance": 70, "mana_cost": 5, "special_power": "bleed"},
+
     # Lightning
-    "Lightning Bolt": {"damage": [15, 20], "hit_chance": 75, "mana_cost": 3, "special_power": "stun"},
-    "Thunder Strike": {"damage": [20, 30], "hit_chance": 65, "mana_cost": 5, "special_power": "stun"},
+    "Lightning Bolt": {"damage": random.randint(15, 20), "hit_chance": 75, "mana_cost": 3, "special_power": "stun"},
+    "Thunder Strike": {"damage": random.randint(20, 30), "hit_chance": 65, "mana_cost": 5, "special_power": "stun"},
+    "Charge Blast": {"damage": random.randint(15, 25), "hit_chance": 70, "mana_cost": 6, "special_power": "stun"},
+    "Storm Surge": {"damage": random.randint(25, 35), "hit_chance": 55, "mana_cost": 7, "special_power": "stun"},
+    "Ball Lightning": {"damage": random.randint(18, 26), "hit_chance": 65, "mana_cost": 5, "special_power": "fire"},
+
     # Fire
-    "Fireball": {"damage": [15, 25], "hit_chance": 65, "mana_cost": 4, "special_power": "fire"},
-    "Flame Wave": {"damage": [20, 30], "hit_chance": 60, "mana_cost": 5, "special_power": "fire"},
-    # Holy
-    "Holy Beam": {"damage": [15, 25], "hit_chance": 75, "mana_cost": 4, "special_power": "heal"},
-    "Healing Light": {"damage": [0, 0], "hit_chance": 100, "mana_cost": 6, "special_power": "heal"},
+    "Fireball": {"damage": random.randint(15, 25), "hit_chance": 65, "mana_cost": 4, "special_power": "fire"},
+    "Flame Wave": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 5, "special_power": "fire"},
+    "Inferno": {"damage": random.randint(35, 50), "hit_chance": 50, "mana_cost": 10, "special_power": "fire"},
+    "Ember Shot": {"damage": random.randint(8, 15), "hit_chance": 80, "mana_cost": 2, "special_power": "fire"},
+    "Dragon’s Breath": {"damage": random.randint(25, 40), "hit_chance": 55, "mana_cost": 7, "special_power": "fire"},
+
+    # Water
+    "Water Jet": {"damage": random.randint(12, 20), "hit_chance": 70, "mana_cost": 3, "special_power": "none"},
+    "Tidal Wave": {"damage": random.randint(28, 38), "hit_chance": 55, "mana_cost": 8, "special_power": "stun"},
+    "Bubble Prison": {"damage": random.randint(8, 12), "hit_chance": 85, "mana_cost": 4, "special_power": "none"},
+    "Aqua Slash": {"damage": random.randint(15, 22), "hit_chance": 75, "mana_cost": 3, "special_power": "bleed"},
+    "Rainstorm": {"damage": random.randint(18, 25), "hit_chance": 70, "mana_cost": 5, "special_power": "none"},
+
+    # Earth
+    "Rock Throw": {"damage": random.randint(10, 18), "hit_chance": 70, "mana_cost": 3, "special_power": "none"},
+    "Earthquake": {"damage": random.randint(30, 45), "hit_chance": 50, "mana_cost": 9, "special_power": "stun"},
+    "Stone Spike": {"damage": random.randint(15, 25), "hit_chance": 65, "mana_cost": 4, "special_power": "none"},
+    "Sandstorm": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 6, "special_power": "blind"},
+    "Iron Fist": {"damage": random.randint(18, 26), "hit_chance": 70, "mana_cost": 5, "special_power": "broken_armor"},
+
+    # Dark
+    "Shadow Bolt": {"damage": random.randint(15, 25), "hit_chance": 70, "mana_cost": 4, "special_power": "curse"},
+    "Nightmare": {"damage": random.randint(25, 35), "hit_chance": 55, "mana_cost": 7, "special_power": "curse"},
+    "Soul Drain": {"damage": random.randint(12, 20), "hit_chance": 65, "mana_cost": 5, "special_power": "vampiric"},
+    "Dark Wave": {"damage": random.randint(20, 30), "hit_chance": 60, "mana_cost": 6, "special_power": "curse"},
+    "Abyssal Flame": {"damage": random.randint(30, 40), "hit_chance": 50, "mana_cost": 8, "special_power": "burn"},
+
+    # Holy / Light
+    "Holy Beam": {"damage": random.randint(15, 25), "hit_chance": 75, "mana_cost": 4, "special_power": "heal"},
+    "Radiant Slash": {"damage": random.randint(20, 30), "hit_chance": 70, "mana_cost": 5, "special_power": "blind"},
+    "Healing Light": {"damage": 0, "hit_chance": 100, "mana_cost": 6, "special_power": "heal"},
+    "Smite": {"damage": random.randint(25, 35), "hit_chance": 65, "mana_cost": 7, "special_power": "burn"},
+    "Sunburst": {"damage": random.randint(30, 40), "hit_chance": 55, "mana_cost": 9, "special_power": "burn"},
+
+    # Arcane / Utility
+    "Arcane Missile": {"damage": random.randint(12, 20), "hit_chance": 80, "mana_cost": 3, "special_power": "none"},
+    "Mana Burn": {"damage": random.randint(10, 15), "hit_chance": 70, "mana_cost": 4, "special_power": "mana_drain"},
+    "Time Stop": {"damage": 0, "hit_chance": 100, "mana_cost": 12, "special_power": "stun"},
+    "Teleport Strike": {"damage": random.randint(20, 28), "hit_chance": 85, "mana_cost": 6, "special_power": "teleport"},
+    "Mirror Image": {"damage": 0, "hit_chance": 100, "mana_cost": 5, "special_power": "confusion"},
 }
 
-# Enemy definitions
+# Enemy definitions - base stats without scaling
 ENEMIES_DB = {
-    "Goblin": {"hp": [15, 25], "damage": [3, 8], "xp_reward": 20, "money_reward": [5, 15]},
-    "Orc": {"hp": [30, 50], "damage": [8, 15], "xp_reward": 50, "money_reward": [20, 40]},
-    "Dragon": {"hp": [100, 150], "damage": [20, 40], "xp_reward": 200, "money_reward": [100, 200]},
-    "Pirate": {"hp": [20, 35], "damage": [5, 12], "xp_reward": 30, "money_reward": [15, 30]},
-    "Dark Knight": {"hp": [50, 80], "damage": [15, 25], "xp_reward": 100, "money_reward": [50, 100]},
+    "Goblin": {"hp": [15, 25], "damage": [3, 8], "xp_reward": 20, "money_reward": [5, 15], "level_scaling": 0.4},
+    "Orc": {"hp": [30, 50], "damage": [8, 15], "xp_reward": 50, "money_reward": [20, 40], "level_scaling": 0.8},
+    "Dragon": {"hp": [100, 150], "damage": [20, 40], "xp_reward": 200, "money_reward": [100, 200], "level_scaling": 1.5},
+    "Pirate": {"hp": [20, 35], "damage": [5, 12], "xp_reward": 30, "money_reward": [15, 30], "level_scaling": 0.5},
+    "Siren": {"hp": [50, 80], "damage": [15, 25], "xp_reward": 100, "money_reward": [50, 100], "level_scaling": 1.0},
 }
+
+def scale_enemy_stats(enemy_type, player_level):
+    """Scale enemy stats based on player level for balanced combat"""
+    if enemy_type not in ENEMIES_DB:
+        return None
+    
+    base_enemy = ENEMIES_DB[enemy_type].copy()
+    scaling_factor = base_enemy.pop("level_scaling")
+    
+    # Scale HP: increases with level
+    hp_min, hp_max = base_enemy["hp"]
+    level_bonus = player_level * scaling_factor
+    base_enemy["hp"] = [
+        int(hp_min + level_bonus),
+        int(hp_max + level_bonus)
+    ]
+    
+    # Scale damage: increases with level
+    dmg_min, dmg_max = base_enemy["damage"]
+    base_enemy["damage"] = [
+        int(dmg_min + level_bonus * 0.6),
+        int(dmg_max + level_bonus * 0.6)
+    ]
+    
+    # Scale XP reward: increases with level
+    base_enemy["xp_reward"] = int(base_enemy["xp_reward"] + (player_level - 1) * 10)
+    
+    # Scale money reward: increases with level
+    money_min, money_max = base_enemy["money_reward"]
+    base_enemy["money_reward"] = [
+        int(money_min + level_bonus * 0.5),
+        int(money_max + level_bonus * 0.5)
+    ]
+    
+    return base_enemy
+
+def start_battle(enemy_type):
+    """
+    Trigger a battle with any enemy type from event choices.
+    Scales enemy stats based on player level and sets up combat state.
+    
+    Usage from event choice handlers:
+        return start_battle("Orc")  # Returns proper battle response
+    
+    Returns a dict with battle_started flag and scaled enemy stats
+    """
+    if enemy_type not in ENEMIES_DB:
+        return {"text": f"Enemy {enemy_type} not found", "continue": True}
+    
+    game_state["in_combat"] = True
+    scaled_enemy = scale_enemy_stats(enemy_type, character_stats["Level"])
+    enemy_hp = random.randint(scaled_enemy["hp"][0], scaled_enemy["hp"][1])
+    
+    game_state["current_enemy"] = enemy_type
+    game_state["current_enemy_hp"] = enemy_hp
+    game_state["current_enemy_max_hp"] = enemy_hp
+    
+    return {
+        "text": f"⚔️ COMBAT INITIATED! ⚔️\n\nA {enemy_type} appears and prepares to attack!",
+        "battle_started": True,
+        "enemy": enemy_type,
+        "enemy_hp": enemy_hp,
+        "enemy_max_hp": enemy_hp,
+        "continue": False
+    }
+
+def start_battle_with_intro(enemy_type, narrative):
+    """
+    Show a narrative intro screen before triggering battle.
+    Stores the enemy type in game_state and returns the narrative as an event.
+    When player clicks "Fight!", the battle will start.
+    
+    Usage from event choice handlers:
+        return start_battle_with_intro("Orc", "You were ambushed by an orc!")
+    
+    The "Fight!" button will automatically trigger start_battle(enemy_type)
+    """
+    if enemy_type not in ENEMIES_DB:
+        return {"text": f"Enemy {enemy_type} not found", "continue": True}
+    
+    # Store pending battle info
+    game_state["pending_battle_enemy"] = enemy_type
+    
+    return {
+        "text": narrative,
+        "choices": ["Fight!"],
+        "battle_intro": True,
+        "continue": False
+    }
 
 # ==================== ROUTES FOR STATIC FILES ====================
 
@@ -186,6 +431,11 @@ def trigger_forest_encounter():
     choices = ["Attack", "Talk", "Run"]
     return text, choices
 
+def trigger_arrow_to_the_knee():
+    text = "While adventuring, you take by an arrow in the knee. Ouch! What do you do?\n\n1. Keep going despite the pain\n2. Rest and tend to the wound\n3. Seek out a healer"
+    choices = ["Keep Going", "Rest", "Seek Healer"]
+    return text, choices
+
 def trigger_rest():
     text = "You rest under a tree and recover your strength."
     choices = ["Continue"]
@@ -268,17 +518,44 @@ def trigger_ice_fishing():
     choices = ["Swim", "Fish", "Enjoy View"]
     return text, choices
 
+def trigger_ancient_grove():
+    """New Event: Enchanted grove with mystical properties"""
+    text = "You enter an ancient grove where the trees whisper secrets. A magical aura fills the air.\n\n1. Listen to the trees\n2. Gather herbs\n3. Rest in the grove"
+    choices = ["Listen", "Gather", "Rest"]
+    return text, choices
+
+def trigger_woman_encounter():
+    """New Event: The beautiful singing woman"""
+    text = "You hear a distant melody, seeming to emanate from the waves. You see a beautiful woman on the shore, and head towards her. \n\n1. Approach her\n2. Prepare to strike\n3. Ignore her and continue on your way"
+    choices = ["Approach", "Strike", "Ignore"]
+    return text, choices
+
+def trigger_orc_battle():
+    """Forest - Encounter a charging Orc! Battle trigger event"""
+    text = "CRASH! A massive Orc bursts through the trees!\n\nThe beast, covered in scars and wielding a crude club, roars at you. There's no escape—combat is inevitable!\n\nReady yourself for battle!"
+    choices = ["Draw Weapon", "Cast Spell", "Defend"]
+    return text, choices
+
+def trigger_biome_transition():
+    """New Event: Transition to a new biome"""
+    text = f"You wander far and wide, until you discover a new biome. Will you continue exploring the {game_state['current_biome']}, or move on?\n\n1. Stay in the {game_state['current_biome']}\n2. Move to a new biome"
+    choices = ["Stay", "Leave"]
+    return text, choices
+
 # Event pool by biome
 EVENTS = {
-    "Forest": [trigger_gnome_ambush, trigger_old_ruins, trigger_forest_encounter, trigger_ancient_tomb, trigger_crystal_cave, trigger_dark_forest],
-    "Ocean": [trigger_pirate_attack, trigger_shipwreck_event, trigger_sunken_ruin],
-    "Plains": [trigger_river_event, trigger_merchant_caravan, trigger_goblin_fight, trigger_goblin_settlement],
-    "Swamp": [trigger_swamp_event, trigger_cursed_library],
-    "Tundra": [trigger_igloo_event, trigger_lost_temple],
-    "Mountain": [trigger_cave_event, trigger_blacksmith_forge, trigger_wizard_tower],
-    "Desert": [trigger_desert_oasis, trigger_dragon_nest],
-    "Jungle": [trigger_jungle_vines, trigger_phoenix_shrine],
+    "Forest": [trigger_biome_transition, trigger_gnome_ambush, trigger_old_ruins, trigger_forest_encounter, trigger_ancient_tomb, trigger_crystal_cave, trigger_dark_forest, trigger_orc_battle],
+    "Ocean": [trigger_biome_transition, trigger_pirate_attack, trigger_shipwreck_event, trigger_sunken_ruin, trigger_woman_encounter],
+    "Plains": [trigger_arrow_to_the_knee, trigger_biome_transition, trigger_river_event, trigger_merchant_caravan, trigger_goblin_fight, trigger_goblin_settlement],
+    "Swamp": [trigger_biome_transition, trigger_swamp_event, trigger_cursed_library, trigger_ancient_grove],
+    "Tundra": [trigger_biome_transition, trigger_igloo_event, trigger_lost_temple],
+    "Mountain": [trigger_biome_transition, trigger_cave_event, trigger_blacksmith_forge, trigger_wizard_tower],
+    "Desert": [trigger_biome_transition, trigger_desert_oasis, trigger_dragon_nest],
+    "Jungle": [trigger_biome_transition, trigger_jungle_vines, trigger_phoenix_shrine],
 }
+
+# List of available biomes (derived from EVENTS keys)
+BIOMES = list(EVENTS.keys())
 
 # ==================== WEAPON SYSTEM FUNCTIONS ====================
 
@@ -293,6 +570,136 @@ def weapon_get(weapon_name):
     else:
         return "Weapon not found in database"
 
+def get_random_weapon_by_rarity(rarity):
+    """
+    Get a random weapon of a specific rarity level.
+    Valid rarities: "Legendary", "Rare", "Uncommon", "Common"
+    """
+    weapons_of_rarity = [
+        weapon_name for weapon_name, stats in WEAPONS_DB.items()
+        if stats.get("rarity") == rarity
+    ]
+    
+    if not weapons_of_rarity:
+        return None
+    
+    return random.choice(weapons_of_rarity)
+
+def get_equipped_weapon_data():
+    """
+    Get the full weapon data for the currently equipped weapon.
+    Returns the weapon dict from WEAPONS_DB.
+    """
+    global equipped_weapon
+    
+    if equipped_weapon and equipped_weapon in WEAPONS_DB:
+        return WEAPONS_DB[equipped_weapon]
+    else:
+        # Fallback to Fist if nothing equipped
+        return WEAPONS_DB.get("Fist", {"damage": [0, 0]})
+
+def calculate_weapon_damage(use_max=True):
+    """
+    Calculate total weapon damage with stat modifiers.
+    
+    Args:
+        use_max (bool): If True, uses max damage roll. If False, uses min damage.
+    
+    Returns:
+        int: Total damage including weapon base + strength/dexterity modifiers
+    """
+    weapon = get_equipped_weapon_data()
+    damage_range = weapon.get("damage", [0, 0])
+    
+    # Choose min or max damage
+    base_damage = damage_range[1] if use_max else damage_range[0]
+    
+    # Add strength modifier (same formula as combat)
+    strength_bonus = math.floor(character_stats.get("Strength", 0) * 0.6)
+    
+    # Add dexterity modifier
+    dex_bonus = math.floor(character_stats.get("Dexterity", 0) * 0.3)
+    
+    total_damage = max(0, base_damage + strength_bonus + dex_bonus)
+    return total_damage
+
+def get_total_player_power():
+    """
+    Get an overall power level combining weapon and strength.
+    Useful for comparing against enemy difficulty thresholds.
+    
+    Returns:
+        int: Total power score
+    """
+    return character_stats.get("Strength", 0) + calculate_weapon_damage()
+
+def get_equipped_spell_data():
+    """
+    Get the full spell data for the currently equipped spell.
+    Returns the spell dict from SPELLS_DB.
+    """
+    global equipped_spell
+    
+    if equipped_spell and equipped_spell in SPELLS_DB:
+        return SPELLS_DB[equipped_spell]
+    else:
+        # Fallback to empty spell if none equipped
+        return {"damage": [0, 0], "mana_cost": 0}
+
+def calculate_spell_damage(use_max=True):
+    """
+    Calculate total spell damage with stat modifiers.
+    
+    Args:
+        use_max (bool): If True, uses max damage roll. If False, uses min damage.
+    
+    Returns:
+        int: Total damage including spell base + magic/intellect modifiers
+    """
+    spell = get_equipped_spell_data()
+    damage_range = spell.get("damage", [0, 0])
+    
+    # Choose min or max damage
+    base_damage = damage_range[1] if use_max else damage_range[0]
+    
+    # Add magic modifier (same formula as combat)
+    magic_bonus = math.floor(character_stats.get("Magic", 0) * 0.7)
+    
+    # Add intellect modifier
+    intellect_bonus = math.floor(character_stats.get("Intellect", 0) * 0.4)
+    
+    total_damage = max(0, base_damage + magic_bonus + intellect_bonus)
+    return total_damage
+
+def get_total_spell_power():
+    """
+    Get an overall spell power level combining magic and spell damage.
+    Useful for comparing against magical difficulty thresholds.
+    
+    Returns:
+        int: Total spell power score
+    """
+    return character_stats.get("Magic", 0) + calculate_spell_damage()
+
+def teleport_random_biome():
+    """Teleport the player to a random different biome."""
+    available = [b for b in BIOMES if b != game_state.get("current_biome")]
+    if not available:
+        available = BIOMES
+    new_biome = random.choice(available)
+    while new_biome == game_state["current_biome"]: # Don't stay in the same biome
+        new_biome = random.choice(available)
+    game_state["current_biome"] = new_biome
+    return new_biome
+
+
+def teleport_to_biome(biome_name):
+    """Teleport the player to a specific biome if valid."""
+    if biome_name not in BIOMES:
+        raise ValueError("Invalid biome")
+    game_state["current_biome"] = biome_name
+    return biome_name
+
 # ==================== ROUTES ====================
 
 @app.route("/api/init", methods=["POST"])
@@ -305,7 +712,16 @@ def init_game():
     
     game_state["chosen_class"] = chosen_class
     game_state["is_game_started"] = True
+    # Start in Forest by default, but small chance to start in another biome
     game_state["current_biome"] = "Forest"
+    try:
+        if random.random() < 0.10:  # 10% chance to start in a random biome
+            other = [b for b in BIOMES if b != "Forest"]
+            if other:
+                game_state["current_biome"] = random.choice(other)
+    except Exception:
+        # BIOMES may not be defined in some initialization orders; fall back to Forest
+        game_state["current_biome"] = "Forest"
     
     # Apply class bonuses and starting weapons
     if chosen_class == 1:  # Warrior
@@ -349,6 +765,11 @@ def get_event():
     # Get random event for this biome
     available_events = EVENTS.get(biome, EVENTS["Forest"])
     selected_event = random.choice(available_events)
+    if game_state.get("current_event_name") == selected_event.__name__:
+        # Avoid repeating the same event twice in a row
+        available_events = [e for e in available_events if e.__name__ != game_state["current_event_name"]]
+        if available_events:
+            selected_event = random.choice(available_events)
     
     text, choices = selected_event()
     event_name = selected_event.__name__
@@ -361,6 +782,32 @@ def get_event():
         "choices": choices,
     })
 
+
+@app.route("/api/teleport-random", methods=["POST"])
+def api_teleport_random():
+    """Endpoint to teleport player to a random biome."""
+    try:
+        new_biome = teleport_random_biome()
+        return jsonify({"new_biome": new_biome, "game_state": game_state})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/teleport-to", methods=["POST"])
+def api_teleport_to():
+    """Endpoint to teleport player to a specific biome. Provide JSON {"biome": "Desert"}."""
+    data = request.json or {}
+    biome = data.get("biome")
+    if not biome:
+        return jsonify({"error": "No biome provided", "available": BIOMES}), 400
+    if biome not in BIOMES:
+        return jsonify({"error": "Biome not found", "available": BIOMES}), 400
+    try:
+        teleport_to_biome(biome)
+        return jsonify({"new_biome": biome, "game_state": game_state})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/choose", methods=["POST"])
 def handle_choice():
     """Handle player's choice in an event"""
@@ -370,11 +817,146 @@ def handle_choice():
     
     # Determine outcome based on event and choice
     outcome = process_choice(event_name, choice)
+
+    character_stats["Mana"] += 1  # Passive mana regen
+    check_game_state()
+    
+    # Check for level up
+    level_up_result = level_up()
+    
+    # If level up occurred, merge the level up data into outcome
+    if level_up_result.get("is_level_up", False):
+        outcome["is_level_up"] = True
+        outcome["new_level"] = level_up_result["new_level"]
+        outcome["stat_increases"] = level_up_result["stat_increases"]
+        outcome["new_stats"] = level_up_result["new_stats"]
+        outcome["level_up_text"] = level_up_result["text"]
     
     return jsonify(outcome)
 
+def check_game_state():
+    if character_stats["HP"] >= character_stats["max_HP"]:
+        character_stats["HP"] = character_stats["max_HP"]
+    if character_stats["Mana"] >= character_stats["max_Mana"]:
+        character_stats["Mana"] = character_stats["max_Mana"]
+
+    if character_stats["HP"] <= 0:
+        # Reset game state on death
+        game_state["is_game_started"] = False
+        game_state["current_biome"] = "Forest"
+        character_stats["HP"] = 20
+        character_stats["max_HP"] = 20
+        character_stats["Mana"] = 20
+        character_stats["max_Mana"] = 20
+        character_stats["Energy"] = 100
+        character_stats["Strength"] = 0
+        character_stats["Defense"] = 0
+        character_stats["Magic"] = 0
+        character_stats["Dexterity"] = 0
+        character_stats["Speed"] = 0
+        character_stats["Swim"] = 0
+        character_stats["Intellect"] = 0
+        character_stats["XP"] = 0
+        character_stats["Level"] = 1
+
+def level_up():
+    if character_stats["XP"] >= 100 * (character_stats["Level"] * 1.5):
+        # Store old stats before leveling up
+        old_level = character_stats["Level"]
+        old_stats = {
+            "HP": character_stats["max_HP"],
+            "Mana": character_stats["max_Mana"],
+            "Strength": character_stats["Strength"],
+            "Defense": character_stats["Defense"],
+            "Magic": character_stats["Magic"],
+            "Dexterity": character_stats["Dexterity"],
+            "Speed": character_stats["Speed"],
+            "Swim": character_stats["Swim"],
+            "Intellect": character_stats["Intellect"],
+        }
+        
+        character_stats["Level"] += 1
+        character_stats["XP"] = int(character_stats["XP"] - 100 * (old_level * 1.5))
+
+        random_stat_increase = random.randint(0, 3)
+        random_stat_increase_roll_two = random.randint(0, 3) # Reduce chances of increasing stats by taking the lower of 2 rolls
+
+        if random_stat_increase_roll_two <= random_stat_increase:
+            random_stat_increase
+
+        for stat in character_stats:
+            if stat in ["HP", "max_HP"]:
+                increase = 0.75
+                character_stats[stat] += math.floor(character_stats["Level"] * increase) # HP increases more with level to keep pace with stronger enemies
+            
+            elif stat in ["Mana", "max_Mana"]:
+                increase = 0.5
+                if game_state["chosen_class"] == 2:  # Mages get extra mana increase
+                    increase = 1.0
+                character_stats["max_Mana"] += math.floor(character_stats["Level"] * increase) # Mana increases more with level to keep pace with stronger spells
+                
+            elif stat in ["Strength", "Defense", "Magic"]:
+                if game_state["chosen_class"] == 1 and stat == "Strength":  # Warriors get more strength increase
+                    character_stats[stat] += random_stat_increase + 2 * math.ceil(character_stats["Level"] * 0.5)
+                elif game_state["chosen_class"] == 2 and stat == "Magic":  # Mages get more magic increase
+                    character_stats[stat] += random_stat_increase + 2 * math.ceil(character_stats["Level"] * 0.5)
+                elif game_state["chosen_class"] == 3 and stat == "Defense":  # Defenders get more defense increase
+                    character_stats[stat] += random_stat_increase + 2 * math.ceil(character_stats["Level"] * 0.5)
+                else:
+                    character_stats[stat] += random_stat_increase # Other stats increase more slowly with level to keep the game balanced
+
+            elif stat in ["Dexterity", "Speed", "Swim", "Intellect"]:
+                # New stats - increase gradually with each level
+                character_stats[stat] += math.ceil(character_stats["Level"] * 0.3)
+
+            elif stat in ["Energy"]:
+                character_stats[stat] = 100
+
+        character_stats["HP"] = character_stats["max_HP"]
+        character_stats["Mana"] = character_stats["max_Mana"]
+
+        # Calculate stat increases
+        stat_increases = {
+            "HP": character_stats["max_HP"] - old_stats["HP"],
+            "Mana": character_stats["max_Mana"] - old_stats["Mana"],
+            "Strength": character_stats["Strength"] - old_stats["Strength"],
+            "Defense": character_stats["Defense"] - old_stats["Defense"],
+            "Magic": character_stats["Magic"] - old_stats["Magic"],
+            "Dexterity": character_stats["Dexterity"] - old_stats["Dexterity"],
+            "Speed": character_stats["Speed"] - old_stats["Speed"],
+            "Swim": character_stats["Swim"] - old_stats["Swim"],
+            "Intellect": character_stats["Intellect"] - old_stats["Intellect"],
+        }
+
+        return {
+            "text": f"LEVEL UP! You are now level {character_stats['Level']}!",
+            "is_level_up": True,
+            "new_level": character_stats["Level"],
+            "stat_increases": stat_increases,
+            "new_stats": {
+                "HP": character_stats["max_HP"],
+                "Mana": character_stats["max_Mana"],
+                "Strength": character_stats["Strength"],
+                "Defense": character_stats["Defense"],
+                "Magic": character_stats["Magic"],
+                "Dexterity": character_stats["Dexterity"],
+                "Speed": character_stats["Speed"],
+                "Swim": character_stats["Swim"],
+                "Intellect": character_stats["Intellect"],
+            },
+            "continue": True
+        }
+    
+    else:
+        return {"text": "", "continue": True, "is_level_up": False}
+
 def process_choice(event_name, choice):
     """Process player choice and return outcome"""
+    
+    # Check if there's a pending battle and player clicked "Fight!"
+    if choice == "Fight!" and game_state.get("pending_battle_enemy"):
+        enemy_type = game_state.pop("pending_battle_enemy")  # Remove the pending battle flag
+        return start_battle(enemy_type)
     
     if event_name == "trigger_swamp_event":
         if choice == "Scavenge":
@@ -404,8 +986,10 @@ def process_choice(event_name, choice):
                 character_stats["HP"] -= 5
                 return {"text": "Your attack fails. HP -5. The gnomes pity you and leave.", "continue": True}
         elif choice == "Lightning Strike":
+            if character_stats["Mana"] < 10:
+                return {"text": f"You don't have enough mana! You need 10 but only have {character_stats['Mana']}. The gnomes attack! HP -5", "continue": True}
             character_stats["XP"] += 25
-            character_stats["Mana"] = max(0, character_stats["Mana"] - 10)
+            character_stats["Mana"] -= 10
             return {"text": "Lightning strikes! Gnomes defeated. XP +25, Mana -10", "continue": True}
         elif choice == "Bribe":
             if inventory["Money"] >= 2:
@@ -536,6 +1120,8 @@ def process_choice(event_name, choice):
                 character_stats["XP"] += 15
                 return {"text": "You magically board the ship! XP +15", "continue": True}
             elif choice == "Conjure Storm":
+                if character_stats["Mana"] < 10:
+                    return {"text": f"You don't have enough mana! You need 10 but only have {character_stats['Mana']}. You are captured by pirates!", "continue": True}
                 character_stats["Mana"] -= 10
                 character_stats["XP"] += 25
                 return {"text": "Powerful storm! Pirates flee! XP +25, Mana -10", "continue": True}
@@ -545,19 +1131,76 @@ def process_choice(event_name, choice):
     
     elif event_name == "trigger_forest_encounter":
         if choice == "Attack":
-            character_stats["XP"] += 10
-            return {"text": "You defeat the gnomes! XP +10", "continue": True}
+            # Use weapon damage combined with strength to determine outcome
+            player_power = get_total_player_power()
+            gnome_difficulty = 35  # A little more difficult than easy
+            fate = random.randint(1, 100)
+            
+            if player_power >= gnome_difficulty and fate <= 50:
+                # Strong attack! Overwhelming victory
+                character_stats["XP"] += 15
+                weapon = get_equipped_weapon_data()
+                weapon_name = equipped_weapon if equipped_weapon != "Fist" else "bare hands"
+                return {"text": f"Your powerful strike with {weapon_name} overwhelms the gnomes! They are defeated. XP +15", "continue": True}
+            elif player_power >= gnome_difficulty and fate <= 80:
+                # Solid victory
+                character_stats["XP"] += 12
+                character_stats["HP"] -= 3
+                return {"text": "You defeat the gnomes, but they put up a fight and manage to strike you a few times before going down. HP -3, XP +12", "continue": True}
+            else:
+                fate = random.randint(1, 100)
+                # Standard victory
+                if fate <= 70:
+                    character_stats["XP"] += 10
+                    character_stats["HP"] -= 5
+                    return {"text": "You defeat the gnomes after a brief skirmish, but take some damage. HP -5, XP +10", "continue": True}
+                else:
+                    character_stats["HP"] -= 10
+                    return {"text": "The gnomes outnumber you, and you take heavy damage before managing to escape! HP -10", "continue": True}
         elif choice == "Talk":
             character_stats["XP"] += 5
-            return {"text": "The gnomes appreciate your civility. XP +5", "continue": True}
+            fate = random.randint(1, 100)
+            if fate <= 35:
+                character_stats["Intellect"] += 1
+                character_stats["XP"] += 5
+                return {"text": "The gnomes appreciate your civility, and they teach you some important information. XP +5, Intellect +1", "continue": True}
+            elif fate <= 60:
+                return {"text": "The gnomes are indifferent to your attempts at conversation, but they let you be.", "continue": True}
+            elif fate <= 80:
+                damage_taken = random.randint(1, 5)
+                character_stats["HP"] -= damage_taken
+                return {"text": f"The gnomes turn violent, and begin to attack you. You aren't too badly harmed, but take {damage_taken} damage.", "continue": True}
+            else:
+                return {"text": "The gnomes are amused by your attempts at conversation, and they decide to let you go on your way.", "continue": True}
         elif choice == "Run":
-            return {"text": "You escape into the forest...", "continue": True}
+            fate = random.randint(1, 100)
+            if character_stats["Speed"] >= 5 and fate <= 55:
+                return {"text": "You escape into the forest...", "continue": True}
+            elif character_stats["Speed"] >= 5 and fate <= 70:
+                character_stats["HP"] -= 2
+                return {"text": "You manage to escape, but not before the gnomes strike you a few times. HP -2", "continue": True}
+            elif character_stats["Speed"] >= 5:
+                character_stats["HP"] -= 3
+                character_stats["Speed"] += 1
+                return {"text": "The gnomes are fast, and you struggle to get away. You take some damage, but have learned to run a bit quicker. Speed +1, HP -3", "continue": True}
+            elif character_stats["Speed"] < 5:
+                if fate <= 50:
+                    return {"text": "You try to run, but the gnomes are too fast! You manage to escape, but not before taking significant damage. HP -10", "continue": True}
+                else:
+                    character_stats["Speed"] += 2
+                    return {"text": "You're not much of a runner, but you're at least faster than the gnomes. In fact, you might just be a little faster in general. Speed +2", "continue": True}
+            else:
+                damage_taken = random.randint(1, 5)
+                character_stats["HP"] -= damage_taken
+                return {"text": f"You try to run, but the gnomes are too fast! You take {damage_taken} damage.", "continue": True}
     
     elif event_name == "trigger_goblin_fight":
         if choice == "Fight":
             character_stats["XP"] += 15
             return {"text": "You defeat the goblin! XP +15", "continue": True}
         elif choice == "Cast Spell":
+            if character_stats["Mana"] < 5:
+                return {"text": f"You don't have enough mana! You need 5 but only have {character_stats['Mana']}. The goblin attacks! HP -10", "continue": True}
             character_stats["Mana"] -= 5
             character_stats["XP"] += 12
             return {"text": "Spell hits! XP +12, Mana -5", "continue": True}
@@ -566,14 +1209,34 @@ def process_choice(event_name, choice):
     
     elif event_name == "trigger_ancient_tomb":
         if choice == "Take Weapon":
-            weapon_msg = weapon_get("Shadow Katana")
-            character_stats["XP"] += 25
-            return {"text": f"{weapon_msg}\nXP +25", "continue": True}
+            fate = random.randint(1, 100)
+            if fate <= 50:
+                weapon_msg = get_random_weapon_by_rarity("Uncommon")
+                character_stats["XP"] += 10
+                return {"text": f"{weapon_msg}\nXP +10", "continue": True}
+            if fate <= 60:
+                weapon_msg = weapon_get("Shadow Katana")
+                character_stats["XP"] += 25
+                return {"text": f"{weapon_msg}\nXP +25", "continue": True}
+            else:
+                character_stats["HP"] -= 5
+                return {"text": "You approach the sword, but trigger a trap! HP -5", "continue": True}
         elif choice == "Search Treasure":
-            inventory["Gold"] += 5
-            return {"text": "You find ancient gold coins. Gold +5", "continue": True}
+            if equipped_weapon == "Shadow Katana":
+                fate = random.randint(1, 100)
+                if fate <= 70:
+                    inventory["Gold"] += 5
+                    return {"text": "You see an ancient lock, and insert your shadow katana to open up to a vault! Unfortunately, it appears to have mostly been raided. You still get some money. Gold +5", "continue": True}
+                else:
+                    return {"text": "You see an ancient lock, and insert your shadow katana to open up to a vault! Tragically, it appears to be empty.", "continue": True}
+            else:
+                return {"text": "You search the tomb but find nothing of value. Maybe there's a hidden mechanism that requires a special weapon?", "continue": True}
         elif choice == "Leave":
-            return {"text": "You leave the tomb undisturbed.", "continue": True}
+            fate = random.randint(1, 2)
+            if fate == 1:
+                return {"text": "You leave the tomb undisturbed.", "continue": True}
+            elif fate == 2:
+                return {"text": "You escape the tomb without too much difficulty", "continue": True}
     
     elif event_name == "trigger_blacksmith_forge":
         if choice == "Take Weapon":
@@ -588,14 +1251,32 @@ def process_choice(event_name, choice):
     
     elif event_name == "trigger_dragon_nest":
         if choice == "Grab Gold":
-            inventory["Gold"] += 10
-            return {"text": "You collect treasure from the nest. Gold +10", "continue": True}
+            fate = random.randint(1, 100)
+            if fate <= 30:
+                inventory["Gold"] += 10
+                return {"text": "You collect treasure from the nest. Gold +10", "continue": True}
+            else:
+                return start_battle_with_intro("Dragon", "As you reach for the gold, a massive dragon swoops down to defend its nest! Prepare for battle!")
         elif choice == "Take Egg":
-            inventory["Gold"] += 3
-            character_stats["XP"] += 50
-            return {"text": "You take the dragon egg! A baby dragon bursts forth - XP +50, Gold +3", "continue": True}
+            fate = random.randint(1, 100)
+            if fate <= 20:
+                inventory["Gold"] += 3
+                character_stats["XP"] += 50
+                return {"text": "You take the dragon egg! A baby dragon bursts forth - XP +50, Gold +3", "continue": True}
+            if fate <= 35:
+                weapon_msg = weapon_get("Dragon Claw")
+                return {"text": f"You go in for the egg, but find something even better! {weapon_msg}", "continue": True}
+            elif fate <= 75:
+                return start_battle_with_intro("Dragon", "The dragon is enraged that you tried to steal its egg! It attacks with fiery fury!")
+            else:
+                character_stats["HP"] -= 20
+                return {"text": "The dragon is furious and attacks you! You can't even defend yourself in time, so you run, but not before taking substantial damage. HP -20", "continue": True}
         elif choice == "Flee":
-            return {"text": "You flee as the dragon returns!", "continue": True}
+            fate = random.randint(1, 100)
+            if fate <= 60:
+                return {"text": "You flee as the dragon returns!", "continue": True}
+            else:
+                return start_battle_with_intro("Dragon", "You try to flee, but are not fast enough. Prepare to fight for your life!")
     
     elif event_name == "trigger_cursed_library":
         if choice == "Touch Artifact":
@@ -728,9 +1409,98 @@ def process_choice(event_name, choice):
         elif choice == "Enjoy View":
             character_stats["XP"] += 5
             return {"text": "You enjoy the view. XP +5", "continue": True}
-    
-    return {"text": "Unknown choice", "continue": True}
+        
+    elif event_name == "trigger_ancient_grove":
+        if choice == "Listen":
+            character_stats["XP"] += 15
+            return {"text": "The trees share their wisdom! XP +15", "continue": True}
+        elif choice == "Gather":
+            inventory["Herbs"] += 1
+            return {"text": "You gather medicinal herbs! Herbs +1", "continue": True}
+        elif choice == "Rest":
+            character_stats["HP"] = min(character_stats["max_HP"], character_stats["HP"] + 10)
+            return {"text": "The grove heals you. HP +10", "continue": True}
+        
+    elif event_name == "trigger_woman_encounter":
+        if choice == "Approach":
+            fate = random.randint(1, 100)
+            if fate <= 15:
+                character_stats["Morale"] += 10
+                return {"text": "The woman turns out to be nice, you have a nice chat. Morale +10", "continue": True}
+            elif fate <= 25:
+                return {"text": "The woman turns out to be a siren, lures you into the water, and you drown. Game Over.", "continue": False}
+            else:
+                character_stats["HP"] -= 15
+                return {"text": "The woman turns out to be a siren and lures you into the water. You nearly drown, but escape.", "continue": True}
+        elif choice == "Strike":
+            character_stats["HP"] -= 10
+            return {"text": "The woman is startled and attacks you! HP -10", "continue": True}
+        elif choice == "Ignore":
+            return {"text": "You ignore the woman and continue on your way.", "continue": True}
 
+    elif event_name == "trigger_orc_battle":
+        # Any choice leads to battle with the Orc
+        return start_battle("Orc")
+    
+    elif event_name == "trigger_biome_transition":
+        if choice == "Leave":
+            new_biome = random.choice(BIOMES)
+            game_state["current_biome"] = new_biome
+            return {"text": f"You continue on and enter the {new_biome}...", "continue": True}
+        elif choice == "Stay":
+            return {"text": f"You choose to remain in the {game_state['current_biome']}.", "continue": True}
+        
+    elif event_name == "trigger_arrow_to_the_knee":
+        if choice == "Keep Going":
+            fate = random.randint(1, 2)
+            if character_stats["Dexterity"] >= (character_stats["Level"] * 3) and fate == 1:
+                return {"text": "You manage to keep going without much trouble!", "continue": True}
+            if character_stats["Strength"] >= (character_stats["Level"] * 3) and fate == 1:
+                character_stats["HP"] += 1
+                return {"text": "You decide to continue, and your strength snaps the arrow out of your leg. You feel good as new! HP +1", "continue": True}
+            elif fate == 1:
+                character_stats["HP"] -= 5
+                return {"text": "You manage to keep going despite the pain. HP -5", "continue": True}
+            if fate == 2:
+                character_stats["Intellect"] += 1
+                return {"text": "You analyze the situation and find a way to minimize the pain. Intellect +1", "continue": True}
+            character_stats["HP"] -= 5
+            return {"text": "You keep going despite the pain. HP -5", "continue": True}
+        elif choice == "Rest":
+            fate = random.randint(1, 100)
+            if fate <= 25:
+                character_stats["HP"] = min(character_stats["max_HP"], character_stats["HP"] + 10)
+                return {"text": "You rest and tend to your wound. HP +10", "continue": True}
+            else:
+                return start_battle_with_intro("Orc", "You take a moment to rest. In your moment of weakness, an orc ambushes you! Prepare for battle!")
+        elif choice == "Seek Healer":
+            fate = random.randint(1, 100)
+            if fate < 25:
+                character_stats["XP"] += 10
+                character_stats["HP"] = character_stats["max_HP"]
+                return {"text": "You seek out a healer, who heals you. HP restored, XP +10", "continue": True}
+            elif fate < 35:
+                character_stats["Max_HP"] -= 2
+                character_stats["HP"] -= 5
+                return {"text": "You are too far from any potential help, you are in pain. Max_HP -2, HP -5", "continue": True}
+            elif fate <= 55:
+                # Encounter an Orc disguised as a healer! Show intro, then battle
+                return start_battle_with_intro("Orc", "You finally find someone who claims to be a healer. As you approach, they suddenly reveal themselves—an Orc! They draw their weapon, ready for combat.")
+            elif fate <= 75:
+                # Take damage from the pain
+                character_stats["HP"] -= 20
+                return {"text": "You search for a healer but the pain is too much to bear, you manage to rip the arrow out but it deals some severe damage. HP -20", "continue": True}
+            elif fate <= 80:
+                # Find a random rare weapon from a dead adventurer
+                rare_weapon = get_random_weapon_by_rarity("Rare")
+                weapon_msg = weapon_get(rare_weapon)
+                return {"text": f"While searching for a healer, you're surprised to notice that it wasn't an arrow in your knee at all. {weapon_msg}!", "continue": True}
+            else:
+                return {"text": "You search for a healer but find none. However, you hardly feel any pain anymore. Guess walking it off was all you needed.", "continue": True}
+        
+        # Place new events before this line ^^^
+        
+    return {"text": "Unknown choice", "continue": True}
 
 
 @app.route("/api/stats", methods=["GET"])
@@ -766,7 +1536,7 @@ def get_game_state():
 
 @app.route("/api/start-combat", methods=["POST"])
 def start_combat():
-    """Start a combat encounter"""
+    """Start a combat encounter with level-scaled enemy stats"""
     global player_spells
     
     data = request.json
@@ -775,12 +1545,14 @@ def start_combat():
     if enemy_type not in ENEMIES_DB:
         enemy_type = "Goblin"
     
-    enemy_data = ENEMIES_DB[enemy_type]
+    # Get scaled enemy stats based on player level
+    enemy_data = scale_enemy_stats(enemy_type, character_stats["Level"])
     enemy_hp = random.randint(enemy_data["hp"][0], enemy_data["hp"][1])
     
     game_state["in_combat"] = True
     game_state["current_enemy"] = enemy_type
     game_state["current_enemy_hp"] = enemy_hp
+    game_state["current_enemy_max_hp"] = enemy_hp
     
     # Give starting spells if player has none
     if not player_spells and game_state["chosen_class"] == 2:
@@ -791,7 +1563,7 @@ def start_combat():
         "enemy": enemy_type,
         "enemy_hp": enemy_hp,
         "player_hp": character_stats["HP"],
-        "message": f"A {enemy_type} appears! Prepare for combat!",
+        "message": f"⚔️ A fierce {enemy_type} appears! Prepare for combat! ⚔️",
     })
 
 @app.route("/api/combat-attack", methods=["POST"])
@@ -805,7 +1577,8 @@ def combat_attack():
         return jsonify({"error": "Not in combat"}), 400
     
     enemy_type = game_state["current_enemy"]
-    enemy_data = ENEMIES_DB[enemy_type]
+    # Get scaled enemy stats based on player level
+    enemy_data = scale_enemy_stats(enemy_type, character_stats["Level"])
     
     result_text = ""
     player_damage = 0
@@ -816,29 +1589,50 @@ def combat_attack():
             return jsonify({"error": "Weapon not found"}), 400
         
         weapon_data = player_weapons[action_name]
-        player_damage = random.randint(weapon_data["damage"][0], weapon_data["damage"][1])
+        # allow using the equipped weapon by passing "equipped"
+        if action_name == "equipped":
+            action_name = equipped_weapon
+            weapon_data = player_weapons.get(action_name, weapon_data)
+
+        # base damage from weapon + strength/dexterity modifiers
+        base = random.randint(weapon_data["damage"][0], weapon_data["damage"][1])
+        strength_bonus = math.floor(character_stats.get("Strength", 0) * 0.6)
+        dex_bonus = math.floor(character_stats.get("Dexterity", 0) * 0.3)
+        player_damage = max(0, base + strength_bonus + dex_bonus)
+
+        # hit chance modified by dexterity
         hit_roll = random.randint(1, 100)
-        
-        if hit_roll <= weapon_data["hit_chance"]:
+        hit_threshold = weapon_data.get("hit_chance", 75) + min(20, character_stats.get("Dexterity", 0) // 2)
+        if hit_roll <= hit_threshold:
             result_text += f"🗡️ You hit with {action_name}! Damage: {player_damage}\n"
             game_state["current_enemy_hp"] -= player_damage
         else:
             result_text += f"❌ Your {action_name} missed!\n"
     
     elif action_type == "spell":
+        # allow using the equipped spell by passing "equipped"
+        if action_name == "equipped":
+            action_name = equipped_spell
+
         if action_name not in player_spells:
             return jsonify({"error": "Spell not found"}), 400
-        
+
         spell_data = player_spells[action_name]
-        
+
         if character_stats["Mana"] < spell_data["mana_cost"]:
             return jsonify({"error": f"Not enough mana! Need {spell_data['mana_cost']}, have {character_stats['Mana']}"}), 400
-        
+
         character_stats["Mana"] -= spell_data["mana_cost"]
-        player_damage = random.randint(spell_data["damage"][0], spell_data["damage"][1])
+
+        base = random.randint(spell_data["damage"][0], spell_data["damage"][1])
+        magic_bonus = math.floor(character_stats.get("Magic", 0) * 0.7)
+        int_bonus = math.floor(character_stats.get("Intellect", 0) * 0.4)
+        player_damage = max(0, base + magic_bonus + int_bonus)
+
+        # spell hit chance modified by intellect
         hit_roll = random.randint(1, 100)
-        
-        if hit_roll <= spell_data["hit_chance"]:
+        hit_threshold = spell_data.get("hit_chance", 75) + min(20, character_stats.get("Intellect", 0) // 2)
+        if hit_roll <= hit_threshold:
             result_text += f"✨ {action_name} hits! Damage: {player_damage}\n"
             game_state["current_enemy_hp"] -= player_damage
         else:
@@ -888,6 +1682,7 @@ def combat_attack():
         "action_text": result_text,
         "combat_end": combat_end,
         "end_message": end_message,
+        "game_over": character_stats["HP"] <= 0,
     })
 
 @app.route("/api/equip-weapon", methods=["POST"])
@@ -898,26 +1693,92 @@ def equip_weapon():
     data = request.json
     weapon_name = data.get("weapon")
     
+    # If weapon is known in the global DB but not yet in player's weapons, allow adding it
     if weapon_name not in player_weapons:
-        return jsonify({"error": "Weapon not found"}), 400
-    
+        if weapon_name in WEAPONS_DB:
+            player_weapons[weapon_name] = WEAPONS_DB[weapon_name]
+        else:
+            return jsonify({"error": "Weapon not found"}), 400
+
     equipped_weapon = weapon_name
-    return jsonify({"equipped": weapon_name})
+    return jsonify({"equipped": weapon_name, "weapons": player_weapons})
 
 @app.route("/api/equip-spell", methods=["POST"])
 def equip_spell():
     """Equip a different spell"""
     global equipped_spell
     
-    data = request.json
+    data = request.json or {}
     spell_name = data.get("spell")
-    
-    if spell_name and spell_name not in player_spells:
-        return jsonify({"error": "Spell not found"}), 400
-    
+    print("\n" + "="*60)
+    print("🔧 EQUIP-SPELL ENDPOINT CALLED")
+    print(f"   Spell name requested: {spell_name}")
+    print(f"   Player spells: {list(player_spells.keys())}")
+    print(f"   Currently equipped: {equipped_spell}")
+    print("="*60 + "\n")
+
+    # If no spell provided, allow unequipping
+    if not spell_name:
+        equipped_spell = None
+        print("   → Unequipping spell")
+        return jsonify({"equipped": None, "spells": player_spells})
+
+    # If the player doesn't have the spell but it exists in global DB, grant it (learn it)
+    if spell_name not in player_spells:
+        if spell_name in SPELLS_DB:
+            player_spells[spell_name] = SPELLS_DB[spell_name]
+            print(f"   → Added {spell_name} from SPELLS_DB to player inventory")
+        else:
+            print(f"   → ERROR: {spell_name} not found in SPELLS_DB")
+            return jsonify({"error": "Spell not found"}), 400
+
     equipped_spell = spell_name
-    return jsonify({"equipped": spell_name})
+    print(f"   → SUCCESS: Equipped spell is now: {equipped_spell}")
+    print(f"   → Returning spells: {list(player_spells.keys())}\n")
+    return jsonify({"equipped": spell_name, "spells": player_spells})
+
+
+# ==================== REACT DEV SERVER PROXY ====================
+# Catch-all route: proxy to React dev server for all non-API requests
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def proxy_to_react(path):
+    """Proxy non-API requests to React dev server on localhost:3000"""
+    # Don't proxy API routes - they're handled above
+    if path.startswith("api/"):
+        return jsonify({"error": "Not Found"}), 404
+    
+    try:
+        # Build the target URL
+        target_url = f"{REACT_DEV_SERVER}/{path}"
+        
+        # Forward the request to React dev server
+        response = requests.request(
+            method=request.method,
+            url=target_url,
+            headers={key: value for key, value in request.headers if key != "Host"},
+            data=request.get_data(),
+            allow_redirects=False
+        )
+        
+        # Return the response from React dev server
+        return response.content, response.status_code, dict(response.headers)
+    except requests.exceptions.ConnectionError:
+        # If React dev server is not running, return helpful message
+        return jsonify({"error": "React dev server not running on localhost:3000. Please run 'npm start' in the frontend folder."}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
-    print("🎮 Adventure Game Backend running on http://localhost:5000")
+    print("🎮 Adventure Game Backend Server")
+    print("=" * 50)
+    print("API Server running on: http://localhost:5000")
+    print("Proxying UI requests to: http://localhost:3000")
+    print("=" * 50)
+    print("\n📝 To run the complete game:")
+    print("   Terminal 1: npm start (in frontend folder)")
+    print("   Terminal 2: python backend/app.py (in backend folder)")
+    print("   Then visit: http://localhost:5000")
+    print("=" * 50 + "\n")
     app.run(debug=True, port=5000)

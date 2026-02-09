@@ -10,38 +10,50 @@ import os
 pygame.init()
 
 # Screen dimensions
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 1000
+SCREEN_HEIGHT = 700
 
-# Colors
-SOOTHING_BLUE = (173, 216, 230)
+# Modern Colors (matching web design)
 WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-FOREST_GREEN = (34, 139, 34)
-DESERT_YELLOW = (238, 232, 170)
-OCEAN_BLUE = (70, 130, 180)
-MOUNTAIN_GRAY = (169, 169, 169)
-SWAMP_GREEN = (85, 107, 47)
+BLACK = (26, 26, 26)
+LIGHT_BG = (240, 240, 240)
+DARK_OVERLAY = (0, 0, 0)
 
-# Biome colors
+# Gradients & UI Colors
+PRIMARY_GREEN = (76, 175, 80)
+PRIMARY_BLUE = (33, 150, 243)
+ACCENT_PURPLE = (156, 39, 176)
+SUCCESS_GREEN = (200, 230, 201)
+WARNING_ORANGE = (255, 152, 0)
+DANGER_RED = (244, 67, 54)
+
+# Stat Badge Colors
+STRENGTH_COLOR = (211, 47, 47)  # Red
+DEFENSE_COLOR = (25, 118, 210)  # PRIMARY_BLUE
+MAGIC_COLOR = (124, 58, 237)    # Purple
+INTELLECT_COLOR = (249, 140, 0) # Orange
+DEXTERITY_COLOR = (56, 142, 60) # PRIMARY_GREEN
+SPEED_COLOR = (0, 150, 136)     # Teal
+SWIM_COLOR = (41, 128, 185)     # Ocean PRIMARY_BLUE
+
+# Biome background gradients (darker, more mood)
 biome_colors = {
-    "Forest": FOREST_GREEN,
-    "Desert": DESERT_YELLOW,
-    "Ocean": OCEAN_BLUE,
-    "Mountains": MOUNTAIN_GRAY,
-    "Swamp": SWAMP_GREEN,
-    "Plains": GREEN,
-    "Tundra": WHITE,
-    "Jungle": (0, 100, 0),
+    "Forest": (52, 168, 83),
+    "Desert": (245, 166, 35),
+    "Ocean": (74, 144, 226),
+    "Mountains": (123, 104, 238),
+    "Swamp": (133, 167, 71),
+    "Plains": (129, 199, 132),
+    "Tundra": (207, 226, 243),
+    "Jungle": (0, 128, 0),
     "Castle": (139, 69, 19)
 }
 
-# Fonts
-font = pygame.font.SysFont(None, 24)
-large_font = pygame.font.SysFont(None, 36)
+# Fonts - Using better font sizes for modern UI
+font = pygame.font.SysFont('arial', 18)
+large_font = pygame.font.SysFont('arial', 32)
+title_font = pygame.font.SysFont('arial', 48, bold=True)
+small_font = pygame.font.SysFont('arial', 14)
 
 def wrap_text(text, font, max_width):
     """Wrap text to fit within max_width pixels."""
@@ -60,23 +72,40 @@ def wrap_text(text, font, max_width):
         lines.append(current_line)
     return lines
 
-# Button class
+# Button class - Modern styled
 class Button:
     def __init__(self, x, y, width, height, text, color):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.color = color
-        self.hover_color = (min(color[0] + 50, 255), min(color[1] + 50, 255), min(color[2] + 50, 255))
+        self.hover_color = self._lighten_color(color, 40)
+        self.is_hovered = False
+        self.scale = 1.0
+
+    def _lighten_color(self, color, amount):
+        """Lighten a color by the given amount"""
+        return tuple(min(c + amount, 255) for c in color)
 
     def draw(self, screen):
         mouse_pos = pygame.mouse.get_pos()
-        if self.rect.collidepoint(mouse_pos):
-            pygame.draw.rect(screen, self.hover_color, self.rect)
-            pygame.draw.rect(screen, BLACK, self.rect, 2)
-        else:
-            pygame.draw.rect(screen, self.color, self.rect)
-            pygame.draw.rect(screen, BLACK, self.rect, 2)
-        text_surf = font.render(self.text, True, BLACK)
+        is_hovering = self.rect.collidepoint(mouse_pos)
+        self.is_hovered = is_hovering
+        
+        # Smooth shadow effect
+        shadow_rect = self.rect.copy()
+        shadow_rect.y += 3
+        pygame.draw.rect(screen, (0, 0, 0, 100), shadow_rect, border_radius=8)
+        
+        # Main button
+        button_color = self.hover_color if is_hovering else self.color
+        pygame.draw.rect(screen, button_color, self.rect, border_radius=10)
+        
+        # Border
+        border_color = self._lighten_color(button_color, 30)
+        pygame.draw.rect(screen, border_color, self.rect, 2, border_radius=10)
+        
+        # Text - always white for contrast
+        text_surf = font.render(self.text, True, WHITE)
         text_rect = text_surf.get_rect(center=self.rect.center)
         screen.blit(text_surf, text_rect)
 
@@ -92,9 +121,9 @@ inventory_visible = False
 stats_visible = False
 game_started = False
 buttons = [
-    Button(50, 400, 120, 50, "Warrior", GREEN),
-    Button(200, 400, 120, 50, "Mage", GREEN),
-    Button(350, 400, 120, 50, "Defender", GREEN)
+    Button(50, 400, 120, 50, "Warrior", STRENGTH_COLOR),
+    Button(200, 400, 120, 50, "Mage", ACCENT_PURPLE),
+    Button(350, 400, 120, 50, "Defender", DEFENSE_COLOR)
 ]
 
 # Game state variables
@@ -169,7 +198,7 @@ def handle_choice(choice):
             character_statistics["HP"] = min(max_HP, character_statistics["HP"] + 5)
             character_statistics["Energy"] = min(100, character_statistics["Energy"] + 10)
             current_text = "You rest and recover some HP and energy."
-            buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+            buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
             return
         
         # Handle event choices
@@ -180,10 +209,10 @@ def start_biome_loop():
     global current_text, buttons
     current_text = f"You have arrived in the {current_biome}.\n\nWhat would you like to do?"
     buttons = [
-        Button(50, 400, 120, 50, "Explore", GREEN),
-        Button(200, 400, 120, 50, "Rest", GREEN),
-        Button(350, 400, 120, 50, "Stats", BLUE),
-        Button(500, 400, 120, 50, "Inventory", BLUE)
+        Button(50, 400, 120, 50, "Explore", PRIMARY_GREEN),
+        Button(200, 400, 120, 50, "Rest", PRIMARY_GREEN),
+        Button(350, 400, 120, 50, "Stats", PRIMARY_BLUE),
+        Button(500, 400, 120, 50, "Inventory", PRIMARY_BLUE)
     ]
 
 def handle_event_choice(choice):
@@ -231,7 +260,7 @@ def handle_event_choice(choice):
         elif choice == "Run":
             current_text = "You have run away like a coward. You are not fit to be a fighter for this kingdom. We wish you well, traveller. Goodbye.\n\nLost 20 HP"
             character_statistics["HP"] -= 20
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -246,7 +275,7 @@ def handle_event_choice(choice):
             if character_statistics["Strength"] >= 15:
                 current_text = "You spin around, sword outstretched, daring any gnomes to come close to you. They run to you in hordes, but are sliced down and slain by your sword.\n\nGained 20 XP\nWhat now?\n1. Loot the bodies\n2. Continue"
                 character_statistics["XP"] += 20
-                buttons = [Button(50, 400, 100, 50, "Loot", GREEN), Button(170, 400, 100, 50, "Continue", GREEN)]
+                buttons = [Button(50, 400, 100, 50, "Loot", PRIMARY_GREEN), Button(170, 400, 100, 50, "Continue", PRIMARY_GREEN)]
                 current_event_name = "event3_sub1"
                 return
             else:
@@ -283,7 +312,7 @@ def handle_event_choice(choice):
             else:
                 current_text = "Your offering was not good enough for the gnome king, and you were sacrificed to the gnome Gods. You have been slain. May your name rest in legend.\n\nYou have died."
                 character_statistics["HP"] = 0
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -314,7 +343,7 @@ def handle_event_choice(choice):
                 current_spells["Frozen Shards"] = 1
             else:
                 current_text = "You already know this spell."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -368,9 +397,9 @@ def handle_event_choice(choice):
                     current_text = "You fail to slay the witch, but luckily are able to escape before more damage can be done."
                     teleport_random_biome()
                     buttons = [
-                        Button(50, 400, 120, 50, "Continue", GREEN),
-                        Button(200, 400, 120, 50, "Stats", BLUE),
-                        Button(350, 400, 120, 50, "Inventory", BLUE)
+                        Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                        Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                        Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
                     ]
                     current_event = None
                     current_event_name = None
@@ -380,9 +409,9 @@ def handle_event_choice(choice):
                 current_text = "You manage to escape the witch, and are lucky enough to survive."
                 teleport_random_biome()
                 buttons = [
-                    Button(50, 400, 120, 50, "Continue", GREEN),
-                    Button(200, 400, 120, 50, "Stats", BLUE),
-                    Button(350, 400, 120, 50, "Inventory", BLUE)
+                    Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                    Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                    Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
                 ]
                 current_event = None
                 current_event_name = None
@@ -393,7 +422,7 @@ def handle_event_choice(choice):
                 else:
                     current_text = "You run away, but you end up stubbing your toe on the way out. Ouch...\n\nLost 5 HP"
                     character_statistics["HP"] -= 5
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -411,7 +440,7 @@ def handle_event_choice(choice):
                 inventory["Gold"] += 5
             else:
                 current_text = "Oh no! It's a shark... Your worst nightmare! How will you rid of this foe?\n1. Bite it!\n2. Blast it with a fireball\n3. Swim as fast as you can\n4. Stats\n5. Inventory"
-                buttons = [Button(50, 400, 100, 50, "Bite", GREEN), Button(170, 400, 120, 50, "Fireball", GREEN), Button(300, 400, 120, 50, "Swim", GREEN), Button(50, 450, 100, 50, "Stats", BLUE), Button(170, 450, 100, 50, "Inventory", BLUE)]
+                buttons = [Button(50, 400, 100, 50, "Bite", PRIMARY_GREEN), Button(170, 400, 120, 50, "Fireball", PRIMARY_GREEN), Button(300, 400, 120, 50, "Swim", PRIMARY_GREEN), Button(50, 450, 100, 50, "Stats", PRIMARY_BLUE), Button(170, 450, 100, 50, "Inventory", PRIMARY_BLUE)]
                 current_event_name = "event6_enemy"
                 return
         elif choice == "Dig":
@@ -424,7 +453,7 @@ def handle_event_choice(choice):
                 character_statistics["Morale"] -= 5
         elif choice == "Ignore":
             current_text = "You choose to ignore whatever was in the mud and continue on your journey."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -471,7 +500,7 @@ def handle_event_choice(choice):
                     else:
                         current_text = "The shark demands payment in exchange for your life. You empty your pockets, but unfortunately they were already empty. The shark, as promised, takes your life. You are slain."
                         character_statistics["HP"] = 0
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -488,7 +517,7 @@ def handle_event_choice(choice):
         else:
             inventory["Book"] += 1
             current_text = "You encounter a wizard deep in the forest. He appears to be nice! He hands you a book. What a nice guy.\n\nObtain Book"
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -507,9 +536,9 @@ def handle_event_choice(choice):
                 character_statistics["Morale"] = min(100, character_statistics["Morale"] + 10)
                 teleport_random_biome()
                 buttons = [
-                    Button(50, 400, 120, 50, "Continue", GREEN),
-                    Button(200, 400, 120, 50, "Stats", BLUE),
-                    Button(350, 400, 120, 50, "Inventory", BLUE)
+                    Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                    Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                    Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
                 ]
                 current_event = None
                 current_event_name = None
@@ -519,9 +548,9 @@ def handle_event_choice(choice):
                 character_statistics["Morale"] -= 10
                 teleport_random_biome()
                 buttons = [
-                    Button(50, 400, 120, 50, "Continue", GREEN),
-                    Button(200, 400, 120, 50, "Stats", BLUE),
-                    Button(350, 400, 120, 50, "Inventory", BLUE)
+                    Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                    Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                    Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
                 ]
                 current_event = None
                 current_event_name = None
@@ -530,16 +559,16 @@ def handle_event_choice(choice):
                 current_text = "You let your guard down, and you are attacked by a group of pirates."
                 current_event_name = "trigger_pirate_attack"
                 current_text, choices = trigger_pirate_attack()
-                buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+                buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < len(choices)-2 else PRIMARY_BLUE) for i, c in enumerate(choices)]
                 current_event = handle_event_choice
                 return
         elif choice == "Ignore":
             current_text = "You decide to walk away from the ocean. Can't blame you, who knows what's in there..."
             teleport_random_biome()
             buttons = [
-                Button(50, 400, 120, 50, "Continue", GREEN),
-                Button(200, 400, 120, 50, "Stats", BLUE),
-                Button(350, 400, 120, 50, "Inventory", BLUE)
+                Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
             ]
             current_event = None
             current_event_name = None
@@ -554,14 +583,14 @@ def handle_event_choice(choice):
                 current_text = "As you build a boat, you realize you don't know how to swim. Probably not the greatest idea to go sailing. You decide to continue on."
                 teleport_random_biome()
                 buttons = [
-                    Button(50, 400, 120, 50, "Continue", GREEN),
-                    Button(200, 400, 120, 50, "Stats", BLUE),
-                    Button(350, 400, 120, 50, "Inventory", BLUE)
+                    Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                    Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                    Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
                 ]
                 current_event = None
                 current_event_name = None
                 return
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -623,7 +652,7 @@ def handle_event_choice(choice):
                 current_text = "You have nothing to build a bridge with. Not sure what you were expecting to build. You obviously do not succeed at building a bridge, and were forced to attempt crossing on your own. You cross safely, but are badly hurt and tired.\n\nDown to 1 HP!\nDown to 1 Energy!"
                 character_statistics["HP"] = 1
                 character_statistics["Energy"] = 1
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -662,10 +691,10 @@ def handle_event_choice(choice):
                 current_text = "After a refreshing drink, you turn away from the water."
         elif choice == "Store":
             current_text = 'A small head emerges from the deep, "That ain\'t yours you little punk." says the strange creature.'
-            buttons = [Button(50, 400, 100, 50, "Attack", GREEN), Button(170, 400, 100, 50, "Comply", GREEN), Button(290, 400, 100, 50, "Ignore", GREEN), Button(50, 450, 100, 50, "Stats", BLUE), Button(170, 450, 100, 50, "Inventory", BLUE)]
+            buttons = [Button(50, 400, 100, 50, "Attack", PRIMARY_GREEN), Button(170, 400, 100, 50, "Comply", PRIMARY_GREEN), Button(290, 400, 100, 50, "Ignore", PRIMARY_GREEN), Button(50, 450, 100, 50, "Stats", PRIMARY_BLUE), Button(170, 450, 100, 50, "Inventory", PRIMARY_BLUE)]
             current_event_name = "event10_sub1"
             return
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -684,7 +713,7 @@ def handle_event_choice(choice):
         elif choice == "Ignore":
             current_text = "You ignore the monster and it attacks you!\n\nLost 10 HP"
             character_statistics["HP"] -= 10
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -729,7 +758,7 @@ def handle_event_choice(choice):
         elif choice == "Leave":
             current_text = "You leave the arrow in. It hurts, but maybe it'll come out later.\n\nLose 2 HP"
             character_statistics["HP"] -= 2
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -760,7 +789,7 @@ def handle_event_choice(choice):
             current_text = "You turn and run away from the bridge."
             teleport_random_biome()
             return
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -786,7 +815,7 @@ def handle_event_choice(choice):
                 current_text = "The deer escapes."
         elif choice == "Ignore":
             current_text = "You continue on your path."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -801,17 +830,17 @@ def handle_event_choice(choice):
             fate = random.randint(1, 3)
             if fate == 1:
                 current_text = "Well done fighter! You have found some wood.\n\nGained 1 Wood\nWhat do you do with it?\n1. Keep it\n2. Use it now"
-                buttons = [Button(50, 400, 100, 50, "Keep it", GREEN), Button(170, 400, 100, 50, "Use it now", GREEN)]
+                buttons = [Button(50, 400, 100, 50, "Keep it", PRIMARY_GREEN), Button(170, 400, 100, 50, "Use it now", PRIMARY_GREEN)]
                 current_event_name = "event2_sub1"
                 return
             elif fate == 2:
                 current_text = "Well done fighter! You have found some iron.\n\nGained 1 Iron\nWhat do you do with it?\n1. Keep it\n2. Craft a tool"
-                buttons = [Button(50, 400, 100, 50, "Keep it", GREEN), Button(170, 400, 100, 50, "Craft a tool", GREEN)]
+                buttons = [Button(50, 400, 100, 50, "Keep it", PRIMARY_GREEN), Button(170, 400, 100, 50, "Craft a tool", PRIMARY_GREEN)]
                 current_event_name = "event2_sub2"
                 return
             elif fate == 3:
                 current_text = "You find nothing of value. Better luck next time."
-                buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+                buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
                 current_event = None
                 current_event_name = None
                 game_over = does_game_end()
@@ -824,7 +853,7 @@ def handle_event_choice(choice):
         elif choice == "Explore further":
             current_text = "You explore deeper into the swamp and find a hidden path. You gain 5 XP for your bravery."
             character_statistics["XP"] += 5
-            buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+            buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
             current_event = None
             current_event_name = None
             game_over = does_game_end()
@@ -838,7 +867,7 @@ def handle_event_choice(choice):
             character_statistics["HP"] = min(max_HP, character_statistics["HP"] + 5)
             character_statistics["Energy"] = min(100, character_statistics["Energy"] + 10)
             current_text = "You rest and recover some HP and energy."
-            buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+            buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
             current_event = None
             current_event_name = None
             game_over = does_game_end()
@@ -855,7 +884,7 @@ def handle_event_choice(choice):
         elif choice == "Use it now":
             current_text = "You build a small shelter. Morale +5."
             character_statistics["Morale"] += 5
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -876,7 +905,7 @@ def handle_event_choice(choice):
             else:
                 current_text = "Failed to craft. You keep the iron."
                 inventory["Iron"] += 1
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -892,7 +921,7 @@ def handle_event_choice(choice):
             inventory["Money"] += 5
         elif choice == "Continue":
             current_text = "You leave."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -915,7 +944,7 @@ def handle_event_choice(choice):
             else:
                 current_text = "You get poisoned while harvesting.\n\nLost 10 HP"
                 character_statistics["HP"] -= 10
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -938,7 +967,7 @@ def handle_event_choice(choice):
         elif choice == "Watch":
             current_text = "You enjoy the sight. Morale boosted.\n\nGained 5 Morale"
             character_statistics["Morale"] += 5
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -951,7 +980,7 @@ def handle_event_choice(choice):
     elif current_event_name == "trigger_event17":
         if choice == "Fight":
             current_text = "A sea monster emerges from the depths!\n\nYou engage in battle with the sea monster!"
-            buttons = [Button(50, 400, 100, 50, "Attack", GREEN), Button(170, 400, 100, 50, "Defend", GREEN), Button(290, 400, 100, 50, "Magic", GREEN), Button(50, 450, 100, 50, "Stats", BLUE), Button(170, 450, 100, 50, "Inventory", BLUE)]
+            buttons = [Button(50, 400, 100, 50, "Attack", PRIMARY_GREEN), Button(170, 400, 100, 50, "Defend", PRIMARY_GREEN), Button(290, 400, 100, 50, "Magic", PRIMARY_GREEN), Button(50, 450, 100, 50, "Stats", PRIMARY_BLUE), Button(170, 450, 100, 50, "Inventory", PRIMARY_BLUE)]
             current_event_name = "battle_sea_monster"
             return
         elif choice == "Dive":
@@ -966,7 +995,7 @@ def handle_event_choice(choice):
             else:
                 current_text = "The monster catches up.\n\nLost 10 HP"
                 character_statistics["HP"] -= 10
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -994,7 +1023,7 @@ def handle_event_choice(choice):
             else:
                 current_text = "No cave found. You freeze.\n\nLost 15 HP"
                 character_statistics["HP"] -= 15
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -1020,7 +1049,7 @@ def handle_event_choice(choice):
         elif choice == "Go Around":
             current_text = "You go around. It takes longer.\n\nLost 10 Energy"
             character_statistics["Energy"] -= 10
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -1046,7 +1075,7 @@ def handle_event_choice(choice):
         elif choice == "Wait":
             current_text = "You wait. The storm passes.\n\nLost 10 Energy"
             character_statistics["Energy"] -= 10
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -1082,7 +1111,7 @@ def handle_event_choice(choice):
                         current_text = "You attempt to swim from the boat, but are far too slow to escape the pirates. You are captured."
                         current_event_name = "trigger_escape"
                         current_text, choices = trigger_escape()
-                        buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+                        buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < len(choices)-2 else PRIMARY_BLUE) for i, c in enumerate(choices)]
                         current_event = handle_event_choice
                         return
         else:  # Mage
@@ -1130,10 +1159,10 @@ def handle_event_choice(choice):
                         current_text = "You attempt to swim from the boat, but are far too slow to escape the pirates. You are captured."
                         current_event_name = "trigger_escape"
                         current_text, choices = trigger_escape()
-                        buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+                        buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < len(choices)-2 else PRIMARY_BLUE) for i, c in enumerate(choices)]
                         current_event = handle_event_choice
                         return
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -1149,7 +1178,7 @@ def handle_event_choice(choice):
             current_text = "After struggling with the bands, you manage to shake them off your wrists. What's next?"
             current_event_name = "trigger_escape2"
             current_text, choices = trigger_escape2()
-            buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+            buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < len(choices)-2 else PRIMARY_BLUE) for i, c in enumerate(choices)]
             current_event = handle_event_choice
             return
         elif choice == "Call Help":
@@ -1163,7 +1192,7 @@ def handle_event_choice(choice):
                 character_statistics["Energy"] -= 5
                 current_event_name = "trigger_escape3"
                 current_text, choices = trigger_escape3()
-                buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+                buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < len(choices)-2 else PRIMARY_BLUE) for i, c in enumerate(choices)]
                 current_event = handle_event_choice
                 return
             else:
@@ -1179,7 +1208,7 @@ def handle_event_choice(choice):
                     current_text = "You burst through the door with a fireball, and rush out. Lucky for you, you broke out at night, and despite your very loud exit, nobody wakes up. You simply walk away, safe... for now."
                 else:
                     current_text = "You bust out, and there are pirates guarding the door. You don't have much time, what do you do?"
-                    buttons = [Button(50, 400, 100, 50, "Fight", GREEN), Button(170, 400, 100, 50, "Run", GREEN), Button(290, 400, 100, 50, "Surrender", GREEN)]
+                    buttons = [Button(50, 400, 100, 50, "Fight", PRIMARY_GREEN), Button(170, 400, 100, 50, "Run", PRIMARY_GREEN), Button(290, 400, 100, 50, "Surrender", PRIMARY_GREEN)]
                     current_event_name = "escape2_combat"
                     return
             else:
@@ -1207,9 +1236,9 @@ def handle_event_choice(choice):
                     character_statistics["Speed"] += 1
                     teleport_random_biome()
                     buttons = [
-                        Button(50, 400, 120, 50, "Continue", GREEN),
-                        Button(200, 400, 120, 50, "Stats", BLUE),
-                        Button(350, 400, 120, 50, "Inventory", BLUE)
+                        Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                        Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                        Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
                     ]
                     current_event = None
                     current_event_name = None
@@ -1223,9 +1252,9 @@ def handle_event_choice(choice):
                     character_statistics["Speed"] += 1
                     teleport_random_biome()
                     buttons = [
-                        Button(50, 400, 120, 50, "Continue", GREEN),
-                        Button(200, 400, 120, 50, "Stats", BLUE),
-                        Button(350, 400, 120, 50, "Inventory", BLUE)
+                        Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN),
+                        Button(200, 400, 120, 50, "Stats", PRIMARY_BLUE),
+                        Button(350, 400, 120, 50, "Inventory", PRIMARY_BLUE)
                     ]
                     current_event = None
                     current_event_name = None
@@ -1240,10 +1269,10 @@ def handle_event_choice(choice):
             current_text = "You surrender and are thrown back in your cell. Better luck next time."
             current_event_name = "trigger_escape"
             current_text, choices = trigger_escape()
-            buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+            buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < len(choices)-2 else PRIMARY_BLUE) for i, c in enumerate(choices)]
             current_event = handle_event_choice
             return
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -1297,7 +1326,7 @@ def handle_event_choice(choice):
                 current_text = "You place the bucket on your head at the exact moment a pirate happens to walk in. He must be blind, because he couldn't see you and left the door open behind him. You quietly sneak out and nobody bats an eye. How nice!"
                 teleport_random_biome()
                 return
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -1310,7 +1339,7 @@ def handle_event_choice(choice):
     else:
         # Default handler for unimplemented events
         current_text = f"You encounter an event ({current_event_name}), but this event is not yet fully implemented. You continue on your journey."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         current_event_name = None
         game_over = does_game_end()
@@ -1327,24 +1356,24 @@ def handle_shop_choice(choice):
     if choice == "Purchase":
         current_text = "What would you like to purchase?\nWood: 2 gold each\nIron: 3 gold each\nGold: 5 gold each\nYou have " + str(inventory['Money']) + " gold."
         buttons = [
-            Button(50, 400, 100, 50, "Wood", GREEN),
-            Button(170, 400, 100, 50, "Iron", GREEN),
-            Button(290, 400, 100, 50, "Gold", GREEN),
+            Button(50, 400, 100, 50, "Wood", PRIMARY_GREEN),
+            Button(170, 400, 100, 50, "Iron", PRIMARY_GREEN),
+            Button(290, 400, 100, 50, "Gold", PRIMARY_GREEN),
             Button(410, 400, 100, 50, "Back", RED)
         ]
         current_event = handle_purchase_choice
     elif choice == "Sell":
         current_text = "What would you like to sell?\nWood: 1 gold each\nIron: 2 gold each\nGold: 3 gold each"
         buttons = [
-            Button(50, 400, 100, 50, "Wood", GREEN),
-            Button(170, 400, 100, 50, "Iron", GREEN),
-            Button(290, 400, 100, 50, "Gold", GREEN),
+            Button(50, 400, 100, 50, "Wood", PRIMARY_GREEN),
+            Button(170, 400, 100, 50, "Iron", PRIMARY_GREEN),
+            Button(290, 400, 100, 50, "Gold", PRIMARY_GREEN),
             Button(410, 400, 100, 50, "Back", RED)
         ]
         current_event = handle_sell_choice
     elif choice == "Leave":
         current_text = "You leave the shop and continue your journey."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         game_over = does_game_end()
         if game_over:
@@ -1368,7 +1397,7 @@ def handle_purchase_choice(choice):
     
     if choice == "Back":
         current_text, choices = trigger_shop()
-        buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < 3 else BLUE) for i, c in enumerate(choices)]
+        buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < 3 else PRIMARY_BLUE) for i, c in enumerate(choices)]
         current_event = handle_shop_choice
         return
     
@@ -1384,7 +1413,7 @@ def handle_purchase_choice(choice):
     else:
         current_text = "Invalid choice."
     
-    buttons = [Button(50, 400, 120, 50, "Continue Shopping", GREEN), Button(200, 400, 120, 50, "Leave Shop", RED)]
+    buttons = [Button(50, 400, 120, 50, "Continue Shopping", PRIMARY_GREEN), Button(200, 400, 120, 50, "Leave Shop", RED)]
     current_event = handle_purchase_continue
 
 def handle_purchase_continue(choice):
@@ -1392,11 +1421,11 @@ def handle_purchase_continue(choice):
     
     if choice == "Continue Shopping":
         current_text, choices = trigger_shop()
-        buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < 3 else BLUE) for i, c in enumerate(choices)]
+        buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < 3 else PRIMARY_BLUE) for i, c in enumerate(choices)]
         current_event = handle_shop_choice
     elif choice == "Leave Shop":
         current_text = "You leave the shop and continue your journey."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         game_over = does_game_end()
         if game_over:
@@ -1410,7 +1439,7 @@ def handle_sell_choice(choice):
     
     if choice == "Back":
         current_text, choices = trigger_shop()
-        buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < 3 else BLUE) for i, c in enumerate(choices)]
+        buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < 3 else PRIMARY_BLUE) for i, c in enumerate(choices)]
         current_event = handle_shop_choice
         return
     
@@ -1423,7 +1452,7 @@ def handle_sell_choice(choice):
     else:
         current_text = f"You don't have any {choice} to sell."
     
-    buttons = [Button(50, 400, 120, 50, "Continue Selling", GREEN), Button(200, 400, 120, 50, "Leave Shop", RED)]
+    buttons = [Button(50, 400, 120, 50, "Continue Selling", PRIMARY_GREEN), Button(200, 400, 120, 50, "Leave Shop", RED)]
     current_event = handle_sell_continue
 
 def handle_sell_continue(choice):
@@ -1431,11 +1460,11 @@ def handle_sell_continue(choice):
     
     if choice == "Continue Selling":
         current_text, choices = trigger_shop()
-        buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < 3 else BLUE) for i, c in enumerate(choices)]
+        buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < 3 else PRIMARY_BLUE) for i, c in enumerate(choices)]
         current_event = handle_shop_choice
     elif choice == "Leave Shop":
         current_text = "You leave the shop and continue your journey."
-        buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+        buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         current_event = None
         game_over = does_game_end()
         if game_over:
@@ -2332,7 +2361,7 @@ def trigger_random_event():
     
     current_event_name = selected_event.__name__
     current_text, choices = selected_event()
-    buttons = [Button(50 + i*120, 400, 100, 50, c, GREEN if i < len(choices)-2 else BLUE) for i, c in enumerate(choices)]
+    buttons = [Button(50 + i*120, 400, 100, 50, c, PRIMARY_GREEN if i < len(choices)-2 else PRIMARY_BLUE) for i, c in enumerate(choices)]
     current_event = handle_event_choice
 
 # Dictionaries
@@ -2662,37 +2691,121 @@ def main():
     global current_text, game_started, buttons, chosen_class
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("AdventureGame Pygame")
+    pygame.display.set_caption("Löwengarde Adventure")
 
     running = True
+    clock = pygame.time.Clock()
+    
     while running:
-        bg_color = biome_colors.get(current_biome, SOOTHING_BLUE)
+        clock.tick(60)  # 60 FPS
+        bg_color = biome_colors.get(current_biome, PRIMARY_BLUE)
         screen.fill(bg_color)
 
-        # Determine text color based on background brightness
-        brightness = sum(bg_color) / 3
-        text_color = BLACK if brightness > 128 else WHITE
+        # === TOP BAR WITH STATS ===
+        top_bar_height = 60
+        pygame.draw.rect(screen, (255, 255, 255, 200), (0, 0, SCREEN_WIDTH, top_bar_height))
+        pygame.draw.line(screen, PRIMARY_GREEN, (0, top_bar_height), (SCREEN_WIDTH, top_bar_height), 3)
+        
+        # Display top stats as badges
+        stat_items = [
+            (f"❤️ {character_statistics['HP']}/{max_HP}", DANGER_RED),
+            (f"💙 {character_statistics['Mana']}/{max_Mana}", PRIMARY_BLUE),
+            (f"⚡ LV {character_statistics.get('Level', 1)}", PRIMARY_GREEN),
+        ]
+        
+        x_offset = 20
+        for stat_text, stat_color in stat_items:
+            badge_surf = font.render(stat_text, True, WHITE)
+            badge_rect = badge_surf.get_rect(topleft=(x_offset, 18))
+            
+            # Badge background
+            bg_rect = badge_rect.inflate(16, 12)
+            pygame.draw.rect(screen, stat_color, bg_rect, border_radius=6)
+            screen.blit(badge_surf, badge_rect)
+            x_offset += badge_rect.width + 40
 
-        # Draw text background
-        text_bg_rect = pygame.Rect(40, 40, 720, 300)
-        pygame.draw.rect(screen, WHITE, text_bg_rect)
-        pygame.draw.rect(screen, BLACK, text_bg_rect, 2)
-
-        # Display current text
+        # === EVENT TEXT BOX ===
+        event_x, event_y = 40, 80
+        event_width, event_height = SCREEN_WIDTH - 80, 280
+        
+        # Shadow effect
+        shadow_rect = pygame.Rect(event_x + 2, event_y + 2, event_width, event_height)
+        pygame.draw.rect(screen, (0, 0, 0, 50), shadow_rect, border_radius=12)
+        
+        # Main box
+        pygame.draw.rect(screen, WHITE, (event_x, event_y, event_width, event_height), border_radius=12)
+        pygame.draw.rect(screen, PRIMARY_GREEN, (event_x, event_y, event_width, event_height), 3, border_radius=12)
+        
+        # Event text with wrapping
         wrapped_lines = []
         for paragraph in current_text.split('\n'):
-            wrapped_lines.extend(wrap_text(paragraph, font, 680))
-        y = 50
+            wrapped_lines.extend(wrap_text(paragraph, font, event_width - 40))
+        
+        text_y = event_y + 20
         for line in wrapped_lines:
             text_surf = font.render(line, True, BLACK)
-            screen.blit(text_surf, (50, y))
-            y += 30
-            if y > 320:  # Prevent overflow beyond text box
+            screen.blit(text_surf, (event_x + 20, text_y))
+            text_y += 28
+            if text_y > event_y + event_height - 20:
                 break
 
-        # Draw buttons
-        for button in buttons:
+        # === BUTTONS SECTION ===
+        button_y = event_y + event_height + 30
+        button_width = 140
+        button_height = 50
+        button_spacing = 20
+        
+        # Center buttons
+        total_buttons = len(buttons)
+        total_width = total_buttons * button_width + (total_buttons - 1) * button_spacing
+        start_x = (SCREEN_WIDTH - total_width) // 2
+        
+        for i, button in enumerate(buttons):
+            button.rect.x = start_x + i * (button_width + button_spacing)
+            button.rect.y = button_y
+            button.rect.width = button_width
+            button.rect.height = button_height
             button.draw(screen)
+
+        # === STATS PANEL ===
+        stats_y = button_y + button_height + 20
+        stats_height = SCREEN_HEIGHT - stats_y - 10
+        
+        pygame.draw.rect(screen, WHITE, (40, stats_y, SCREEN_WIDTH - 80, stats_height), border_radius=10)
+        pygame.draw.rect(screen, PRIMARY_BLUE, (40, stats_y, SCREEN_WIDTH - 80, stats_height), 2, border_radius=10)
+        
+        # Stats title
+        title_surf = font.render("⚔️ Character Stats", True, PRIMARY_BLUE)
+        screen.blit(title_surf, (60, stats_y + 10))
+        
+        # Stats in two columns with color badges
+        stat_configs = [
+            ("STR", character_statistics.get("Strength", 0), STRENGTH_COLOR),
+            ("DEF", character_statistics.get("Defense", 0), DEFENSE_COLOR),
+            ("MAG", character_statistics.get("Magic", 0), MAGIC_COLOR),
+            ("DEX", character_statistics.get("Dexterity", 0), DEXTERITY_COLOR),
+            ("SPD", character_statistics.get("Speed", 0), SPEED_COLOR),
+            ("INT", character_statistics.get("Intellect", 0), INTELLECT_COLOR),
+        ]
+        
+        stat_x_offset = 60
+        stat_y_offset = stats_y + 40
+        col_count = 0
+        
+        for label, value, color in stat_configs:
+            # Stat badge
+            badge_width = 120
+            badge_rect = pygame.Rect(stat_x_offset + (col_count % 3) * (badge_width + 30),
+                                     stat_y_offset + (col_count // 3) * 35,
+                                     badge_width, 30)
+            
+            pygame.draw.rect(screen, color, badge_rect, border_radius=6)
+            stat_text = f"{label}: {value}"
+            stat_surf = font.render(stat_text, True, WHITE)
+            stat_rect = stat_surf.get_rect(center=badge_rect.center)
+            screen.blit(stat_surf, stat_rect)
+            
+            col_count += 1
 
         pygame.display.flip()
 
@@ -2718,7 +2831,7 @@ def handle_choice(choice):
             player_weapons[0] = "Sturdy Sword"
             current_text = "Ah, a warrior! Strong with the sword, mighty with the bow! Truly the fighter we always desired! We believe in you warrior, we know you can set us free from the tyrannical king NAME\nYou begin the game with 10 Strength and a Sturdy Sword"
             game_started = True
-            buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+            buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         elif choice == "Mage":
             chosen_class = 2
             max_Mana = 30
@@ -2728,14 +2841,14 @@ def handle_choice(choice):
             player_weapons[0] = "Wooden Staff"
             current_text = "Ah, a mage! A mind like a tempest, and a desire burning like fire! Truly the fighter we always desired! We believe in you mage, we know you can set us free from the tyrannical king NAME\nYou begin the game with 10 Magic, a Sturdy Sword, and a simple Wind Spell"
             game_started = True
-            buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+            buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
         elif choice == "Defender":
             chosen_class = 3
             character_statistics["Defense"] += 10
             player_weapons[0] = "Rusty Sword"
             current_text = "Ah, a defender! Hard like a rock, impenetrable, and ready to protect at all costs! Truly the fighter we always desired! We believe in you defender, we know you can set us free from the tyrannical king NAME\nYou begin the game with 10 Defense and a Rusty Sword"
             game_started = True
-            buttons = [Button(50, 400, 120, 50, "Continue", GREEN)]
+            buttons = [Button(50, 400, 120, 50, "Continue", PRIMARY_GREEN)]
     else:
         if choice == "Continue":
             if current_event is None:
@@ -2744,7 +2857,7 @@ def handle_choice(choice):
             else:
                 # Start the game loop
                 current_text = "Starting your adventure..."
-                buttons = [Button(50, 400, 120, 50, "Next Event", GREEN)]
+                buttons = [Button(50, 400, 120, 50, "Next Event", PRIMARY_GREEN)]
         elif choice == "Next Event":
             # Call the main game loop logic here
             trigger_random_event()
