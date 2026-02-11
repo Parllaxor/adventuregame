@@ -818,6 +818,8 @@ def handle_choice():
     # Determine outcome based on event and choice
     outcome = process_choice(event_name, choice)
 
+    if game_state.get("chosen_class") == 2:  # Mages get extra mana regen
+        character_stats["Mana"] += 1
     character_stats["Mana"] += 1  # Passive mana regen
     check_game_state()
     
@@ -1000,25 +1002,72 @@ def process_choice(event_name, choice):
     
     elif event_name == "trigger_gnome_ambush":
         if choice == "Spin Attack":
-            if character_stats["Strength"] >= 15:
+            fate = random.randint(1, 100)
+            if character_stats["Strength"] >= (math.floor(character_stats["Level"] * 3)) and fate <= 40:
                 character_stats["XP"] += 20
+                character_stats["Strength"] += 1
                 inventory["Money"] += 5
-                return {"text": "Perfect spin attack! Defeated gnomes. XP +20, Money +5", "continue": True}
+                return {"text": "You're so powerful, you simply spin and smash all of the gnomes, and they abandon their fallen brethren and the associated loot. XP +20, Strength +1, Money +5", "continue": True}
+            elif character_stats["Strength"] >= (math.floor(character_stats["Level"] * 3)) and fate > 40:
+                character_stats["XP"] += 5
+                return {"text": "You manage to take out many gnomes with your spin attack, but there are too many of them. You run away like a coward. XP +5", "continue": True}
+            elif character_stats["Strength"] < (math.floor(character_stats["Level"] * 3)) and fate <= 30:
+                character_stats["XP"] += 5
+                character_stats["HP"] -= 10
+                return {"text": "You attempt a spin attack, and while you do manage to take out a gnome or two, you are quickly overwhelmed and beaten up. You do eventually defeat them, but are badly hurt. XP +5, HP -10", "continue": True}
+            elif character_stats["Strength"] < (math.floor(character_stats["Level"] * 3)) and fate <= 65:
+                character_stats["HP"] -= 20
+                if character_stats["HP"] <= 0:
+                    return {"text": "You think it's fun to try a spin attack on the gnomes. They do not. They eat you alive, and you are dead.", "continue": False}
+                else:
+                    return {"text": "You think it's fun to try a spin attack on the gnomes. They do not. They practically eat you alive, and leave you for dead. HP -20", "continue": True}
             else:
                 character_stats["HP"] -= 5
-                return {"text": "Your attack fails. HP -5. The gnomes pity you and leave.", "continue": True}
+                character_stats["Strength"] -= 1
+                character_stats["Dexterity"] -= 1
+                return {"text": "Your attack fails. The gnomes pity you and leave disappointedly. You are embarassed. XP -5, Dexterity -1, Strength -1", "continue": True}
         elif choice == "Lightning Strike":
+            fate = random.randint(1, 100)
             if character_stats["Mana"] < 10:
-                return {"text": f"You don't have enough mana! You need 10 but only have {character_stats['Mana']}. The gnomes attack! HP -5", "continue": True}
-            character_stats["XP"] += 25
-            character_stats["Mana"] -= 10
-            return {"text": "Lightning strikes! Gnomes defeated. XP +25, Mana -10", "continue": True}
-        elif choice == "Bribe":
-            if inventory["Money"] >= 2:
-                inventory["Money"] -= 2
-                return {"text": "You bribe the gnome king. Money -2. You live!", "continue": True}
+                character_stats["HP"] -= 5
+                return {"text": f"You don't have enough mana! You need 10 but only have {character_stats['Mana']}. The gnomes beat you up. HP -5", "continue": True}
+            elif equipped_spell != "Lightning Bolt":
+                character_stats["HP"] -= 5
+                return {"text": f"You don't have the Lightning Bolt spell equipped, and are therefore incapable of doing a lightning strike. The gnomes beat you up. HP -5", "continue": True}
+            elif character_stats["Magic"] > (math.ceil(character_stats["Level"] * 2.5)) and fate <= 50:
+                character_stats["XP"] += 25
+                character_stats["Mana"] -= 10
+                return {"text": "Lightning strikes! Gnomes defeated. XP +25, Mana -10", "continue": True}
+            elif character_stats["Magic"] > (math.ceil(character_stats["Level"] * 2.5)) and fate > 50:
+                character_stats["XP"] += 5
+                character_stats["Mana"] -= 10
+                return {"text": "Your lightning strike is powerful, but there are just too many gnomes. You defeat some of them, but have to run away. XP +5, Mana -10", "continue": True}
+            elif character_stats["Magic"] > 10:
+                character_stats["HP"] -= 5
+                return {"text": "You shoot a powerful lightning strike, but are unable to defeat all of the gnomes, and they overwhelm and trample you. You are lucky to have survived, but surprisingly didn't even get badly hurt. HP -5", "continue": True}
             else:
-                return {"text": "You don't have enough money. The gnomes attack!", "continue": True}
+                character_stats["HP"] -= 5
+                return {"text": "You hold your hand out menacingly, as if to attempt casting a spell, but you're not that good at magic and fail. The gnomes beat you up. HP -5", "continue": True}
+        elif choice == "Bribe":
+            fate = random.randint(1, 100)
+            if inventory["Money"] >= 2 and fate <= 65:
+                inventory["Money"] -= 2
+                return {"text": "You bribe the gnome king with your money, and he spares you. The gnomes continue on.", "continue": True}
+            elif inventory["Money"] >= 2 and fate <= 67:
+                return {"text": "The gnome king is impressed by your charm. He says some stuff in gnomish, and then brings out a pretty gnome girl. However, upon glancing at you, she seems unimpressed, and utters an \"ew\". You are destroyed.", "continue": False}
+            elif inventory["Money"] >= 2 and fate <= 69:
+                return {"text": "The gnome king is impressed by your charm. He says some stuff in gnomish, and then brings out a pretty gnome girl. She announces that she is the princess of the gnomes in your language. Long story short, you fall in love, she asks you to stay with her, and you choose not to continue on your journey. Traitor", "continue": False}
+            elif inventory["Money"] >= 2 and fate <= 80:
+                return {"text": "The gnome king is disappointed by your offer, but chooses to spare you. He leaves you with your cash, and you continue on", "continue": True}
+            elif inventory["Money"] >= 2 and fate > 80:
+                character_stats["HP"] -= 5
+                return {"text": "You attempt to bargain with the gnome king, and eventually he gets bored of you and orders the gnomes to attack. They beat you up, but you're okay. HP -5"}
+            elif fate <= 25:
+                inventory["Money"] += 1
+                return {"text": "Your bribe fails on account of not having enough money to meet the gnomes demands. Fortunately the gnome king is a good guy, and gives you some money to buy food. Money +1"}
+            else:
+                character_stats["HP"] -= 5
+                return {"text": "You don't have enough money. The gnome king order his gnome armies to attack! They simply beat you up. Ouch. HP -5", "continue": True}
     
     elif event_name == "trigger_igloo_event":
         if choice == "Nap":
