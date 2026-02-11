@@ -960,21 +960,43 @@ def process_choice(event_name, choice):
     
     if event_name == "trigger_swamp_event":
         if choice == "Scavenge":
-            fate = random.randint(1, 3)
-            if fate == 1:
-                inventory["Wood"] += 1
-                return {"text": "You found wood! Wood +1", "continue": True}
-            elif fate == 2:
-                inventory["Iron"] += 1
-                return {"text": "You found iron! Iron +1", "continue": True}
+            fate = random.randint(1, 100)
+            if fate <= 40:
+                inventory["Wood"] += 2
+                return {"text": "You found wood! Wood +2", "continue": True}
+            elif fate <= 40:
+                inventory["Iron"] += 2
+                return {"text": "You found iron! Iron +2", "continue": True}
+            elif fate <= 80:
+                return start_battle_with_intro("Goblin", "You power through the swamp for some time before hearing something behind you. A goblin, right on your tail!")
             else:
                 return {"text": "You found nothing of value.", "continue": True}
         elif choice == "Explore":
-            character_stats["XP"] += 5
-            return {"text": "You explore deeper and gain 5 XP!", "continue": True}
+            fate = random.randint(1, 100)
+            if fate <= 5:
+                weapon_msg = get_random_weapon_by_rarity("Legendary")
+                character_stats["XP"] += 10
+                return {"text": f"You found a {weapon_msg}! Incredible! XP +10", "continue": True}
+            elif fate <= 50:
+                character_stats["XP"] += 5
+                inventory["Wood"] += 1
+                return {"text": "You explore deeper, before deciding to just grab some wood lying around. Wood +1, 5 XP!", "continue": True}
+            elif fate <= 60:
+                return start_battle_with_intro("Goblin", "As you explore, the ground beneath you starts to shake. Suddenly, a goblin jumps out from the water!")
+            elif fate <= 80:
+                teleport_random_biome()
+                return {"text": "You find a hidden path that leads you safely out of the swamp.", "continue": True}
+            else:
+                character_stats["HP"] -= 5
+                return {"text": "You get  mosquito bites all over your body. Those are the worst creatures. HP -5", "continue": True}
         elif choice == "Rest":
-            character_stats["HP"] = character_stats["max_HP"]
-            return {"text": f"You rest and restore your HP to {character_stats['max_HP']}!", "continue": True}
+            fate = random.randint(1, 2)
+            if fate == 1:
+                character_stats["HP"] = character_stats["max_HP"]
+                return {"text": f"You rest and restore your HP to {character_stats['max_HP']}!", "continue": True}
+            else:
+                character_stats["HP"] -= 3
+                return start_battle_with_intro("Siren", "As you rest, you hear what sounds ominously like a lullaby... You stand up, but are quickly attacked by a siren! You engage in battle, and lose HP from being jumped! HP -3")
     
     elif event_name == "trigger_gnome_ambush":
         if choice == "Spin Attack":
