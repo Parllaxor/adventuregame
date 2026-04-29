@@ -105,6 +105,28 @@
     font-size: 1.2rem;
     color: #4ade80;
     font-weight: bold;
+    white-space: pre-line;
+}
+
+.combat-display {
+    width: 100%;
+}
+
+.enemy-health {
+    color: #ffd700;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.combat-log {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 14px;
+    white-space: pre-line;
+}
+
+.combat-actions {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .choices {

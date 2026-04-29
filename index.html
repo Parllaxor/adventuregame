@@ -1505,6 +1505,20 @@
             }
         }
 
+        function formatDamageValue(damage) {
+            if (Array.isArray(damage) && damage.length >= 2) {
+                return `${damage[0]}-${damage[1]}`;
+            }
+
+            if (damage && typeof damage === 'object') {
+                const min = damage.min ?? damage[0] ?? 0;
+                const max = damage.max ?? damage[1] ?? min;
+                return `${min}-${max}`;
+            }
+
+            return damage ?? 'N/A';
+        }
+
         async function updateInventoryDisplay() {
             try {
                 const response = await fetch(`${API_BASE}/inventory`);
@@ -1531,7 +1545,7 @@
                     const isEquipped = name === data.equipped_weapon;
                     weaponsHTML += `<div class="inventory-item ${isEquipped ? 'equipped' : ''}" onclick="equipWeapon('${name}')" style="cursor: pointer;">
                         <strong>${name}</strong>${isEquipped ? ' (Equipped)' : ''}<br>
-                        <small>Damage: ${stats.damage[0]}-${stats.damage[1]}, Rarity: ${stats.rarity}</small>
+                        <small>Damage: ${formatDamageValue(stats.damage)}, Rarity: ${stats.rarity ?? 'Unknown'}</small>
                     </div>`;
                 });
                 document.getElementById("weaponsInventory").innerHTML = weaponsHTML || "<div>No weapons</div>";
@@ -1542,7 +1556,7 @@
                     const isEquipped = name === data.equipped_spell;
                     spellsHTML += `<div class="inventory-item ${isEquipped ? 'equipped' : ''}" onclick="equipSpell('${name}')" style="cursor: pointer;">
                         <strong>${name}</strong>${isEquipped ? ' (Equipped)' : ''}<br>
-                        <small>Damage: ${stats.damage[0]}-${stats.damage[1]}, Mana Cost: ${stats.mana_cost}</small>
+                        <small>Damage: ${formatDamageValue(stats.damage)}, Mana Cost: ${stats.mana_cost ?? 0}</small>
                     </div>`;
                 });
                 document.getElementById("spellsInventory").innerHTML = spellsHTML || "<div>No spells</div>";

@@ -83,6 +83,12 @@
     margin-left: 8px;
 }
 
+.item-meta {
+    font-size: 0.85rem;
+    color: #cfcfcf;
+    margin-top: 4px;
+}
+
 .mini-btn:hover {
     background-color: #1a5a7a;
 }

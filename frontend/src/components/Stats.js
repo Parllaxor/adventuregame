@@ -8,6 +8,20 @@ function Stats({ stats, inventory, onBack }) {
   const [equippedWeapon, setEquippedWeapon] = useState(null);
   const [equippedSpell, setEquippedSpell] = useState(null);
 
+  const formatDamage = (damage) => {
+    if (Array.isArray(damage) && damage.length >= 2) {
+      return `${damage[0]}-${damage[1]}`;
+    }
+
+    if (damage && typeof damage === "object") {
+      const min = damage.min ?? damage[0] ?? 0;
+      const max = damage.max ?? damage[1] ?? min;
+      return `${min}-${max}`;
+    }
+
+    return damage ?? "N/A";
+  };
+
   const fetchInventory = async () => {
     try {
       const res = await fetch("http://localhost:5000/api/inventory");
@@ -162,7 +176,12 @@ function Stats({ stats, inventory, onBack }) {
             {Object.keys(weapons).length === 0 && <div className="stat-row">No weapons</div>}
             {Object.entries(weapons).map(([name, w]) => (
               <div key={name} className="stat-row">
-                <span>{name}</span>
+                <div>
+                  <div>{name}</div>
+                  <div className="item-meta">
+                    Damage: {formatDamage(w?.damage)} | Rarity: {w?.rarity || "Unknown"}
+                  </div>
+                </div>
                 <div>
                   {equippedWeapon === name ? (
                     <span className="stat-value">Equipped</span>
@@ -177,7 +196,12 @@ function Stats({ stats, inventory, onBack }) {
             {Object.keys(spells).length === 0 && <div className="stat-row">No spells</div>}
             {Object.entries(spells).map(([name, s]) => (
               <div key={name} className="stat-row">
-                <span>{name}</span>
+                <div>
+                  <div>{name}</div>
+                  <div className="item-meta">
+                    Damage: {formatDamage(s?.damage)} | Mana Cost: {s?.mana_cost ?? 0}
+                  </div>
+                </div>
                 <div>
                   {equippedSpell === name ? (
                     <span className="stat-value">Equipped</span>
