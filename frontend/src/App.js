@@ -5,6 +5,8 @@ import GameScreen from "./components/GameScreen";
 import Stats from "./components/Stats";
 
 function App() {
+  // The top-level app state mirrors the backend's game state for the current session.
+  // Add new UI-level state here if you want the shell to react to additional flags.
   const [gameState, setGameState] = useState({
     is_game_started: false,
     chosen_class: null,
@@ -32,6 +34,8 @@ function App() {
 
   const [showStats, setShowStats] = useState(false);
 
+  // Class selection is the entry point for a new run. The backend initializes stats,
+  // inventory, and starting gear from this request.
   const handleClassSelect = async (classNum) => {
     try {
       const response = await fetch("http://localhost:5000/api/init", {

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./GameScreen.css";
 import LevelUpScreen from "./LevelUpScreen";
+import CombatScreen from "./CombatScreen";
 
 function GameScreen({
   gameState,
@@ -10,6 +11,7 @@ function GameScreen({
   setInventory,
   onShowStats,
 }) {
+  const [transitionLock, setTransitionLock] = useState(false);
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("Loading...");
@@ -21,27 +23,76 @@ function GameScreen({
     enemyHp: 0,
     enemyMaxHp: 0,
     log: "",
+    availableWeapons: [],
+    availableSpells: [],
+    combatLog: [],
   });
+
   const [equipment, setEquipment] = useState({
     weapon: "Fist",
     spell: null,
   });
 
-  useEffect(() => {
-    triggerEvent();
-  }, []);
+  const [availableGear, setAvailableGear] = useState({
+    weapons: [],
+    spells: [],
+  });
 
+  const [bowlingState, setBowlingState] = useState({
+    active: false,
+    score: 0,
+    rolls: 0,
+    rollsRemaining: 5,
+    lastRoll: null,
+    rollHistory: [],
+  });
+
+  // The main gameplay screen switches between event, combat, and minigame modes.
+  // Add new modes here if a new interaction type should be handled separately.
+  const [mode, setMode] = useState("event");
+
+  const modeRef = useRef(mode);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
+    if (transitionLock) return;
+
+    if (modeRef.current === "event" && !event && !loading && !message) {
+      triggerEvent();
+    }
+  }, [mode, event, loading, transitionLock, message]);
+
+  useEffect(() => {
+    if (mode === "event" && !loading) {
+      setTransitionLock(false);
+    }
+  }, [mode, loading]);
+
+  // Syncs the UI with the backend after events, combat, or inventory changes.
+  // If you add new state that should always reflect the server, update this helper.
   const syncGameData = async () => {
+    if (modeRef.current === "bowling") return;
+
     const statsResponse = await fetch("http://localhost:5000/api/game-state");
     const gameData = await statsResponse.json();
 
     setStats(gameData.stats);
     setGameState(gameData.game_state);
     setInventory(gameData.inventory);
+
     setEquipment({
       weapon: gameData.equipped_weapon || "Fist",
       spell: gameData.equipped_spell || null,
     });
+
+    setAvailableGear({
+      weapons: Object.keys(gameData.weapons || {}),
+      spells: Object.keys(gameData.spells || {}),
+    });
+
     setCombatState((prev) => ({
       ...prev,
       active: Boolean(gameData.game_state?.in_combat),
@@ -57,26 +108,43 @@ function GameScreen({
     return gameData;
   };
 
+  const formatEventName = (name) => {
+    return name
+      .replace(/^trigger_/, "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
   const triggerEvent = async () => {
+    if (loading) return;
+
+    console.trace("triggerEvent called");
+    if (modeRef.current !== "event") return;
+
     setLoading(true);
     try {
       const response = await fetch("http://localhost:5000/api/event");
       const data = await response.json();
+
+      if (modeRef.current !== "event") return;
+
       setEvent(data);
       setMessage("");
       await syncGameData();
     } catch (error) {
-      console.error("Error fetching event:", error);
       setMessage("Error loading event");
     } finally {
       setLoading(false);
     }
   };
 
+  // This is the main action pipeline for event choices. New event outcomes should be
+  // handled here or by the backend response that the UI receives.
   const handleChoice = async (choice) => {
     if (!event) return;
 
     setLoading(true);
+
     try {
       const response = await fetch("http://localhost:5000/api/choose", {
         method: "POST",
@@ -86,7 +154,28 @@ function GameScreen({
           event_name: event.event_name,
         }),
       });
+
       const outcome = await response.json();
+
+      if (outcome.minigame === "bowling") {
+        setTransitionLock(true);
+        setMode("bowling");
+
+        setBowlingState({
+          active: true,
+          score: 0,
+          rolls: 0,
+          rollsRemaining: 5,
+          lastRoll: null,
+          rollHistory: [],
+        });
+
+        setEvent(null);
+        setMessage("");
+        setLoading(false);
+        return;
+      }
+
       const gameData = await syncGameData();
 
       if (outcome.is_level_up) {
@@ -98,14 +187,14 @@ function GameScreen({
         setCombatState({
           active: true,
           enemy: outcome.enemy || gameData.game_state?.current_enemy || "Enemy",
-          enemyHp: outcome.enemy_hp ?? gameData.game_state?.current_enemy_hp ?? 0,
-          enemyMaxHp:
-            outcome.enemy_max_hp ??
-            gameData.game_state?.current_enemy_max_hp ??
-            outcome.enemy_hp ??
-            0,
-          log: outcome.text || outcome.message || "Combat started!",
+          enemyHp: outcome.enemy_hp ?? 0,
+          enemyMaxHp: outcome.enemy_max_hp ?? 0,
+          log: outcome.text || "Combat started!",
+          availableWeapons: outcome.available_weapons || [],
+          availableSpells: outcome.available_spells || [],
+          combatLog: outcome.combat_log || [],
         });
+        setMode("combat");
         setEvent(null);
         setMessage("");
         return;
@@ -116,262 +205,344 @@ function GameScreen({
         outcome.choices.length > 0 &&
         outcome.continue === false
       ) {
-        setEvent({
-          ...outcome,
-          event_name: outcome.event_name || "encounter",
-        });
+        setEvent(outcome);
         setMessage("");
         return;
       }
 
       setMessage(outcome.text || "Action complete.");
       setEvent(null);
-    } catch (error) {
-      console.error("Error handling choice:", error);
+    } catch (err) {
+      console.error("Error:", err);
       setMessage("Error processing choice");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCombatAction = async (type) => {
+  const handleCombatAttack = async (type, actionName) => {
     setLoading(true);
     try {
       const response = await fetch("http://localhost:5000/api/combat-attack", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type,
-          action: "equipped",
+          type: type,
+          action: actionName,
         }),
       });
-      const outcome = await response.json();
-      const gameData = await syncGameData();
 
-      if (!response.ok || outcome.error) {
+      const result = await response.json();
+
+      if (result.error) {
         setCombatState((prev) => ({
           ...prev,
-          log: outcome.error || "Combat action failed.",
+          log: `❌ Error: ${result.error}`,
         }));
         return;
       }
 
-      if (outcome.is_level_up) {
-        setLevelUpData({
-          ...outcome,
-          text: [outcome.action_text, outcome.end_message].filter(Boolean).join("\n"),
-        });
-        setShowLevelUp(true);
-      }
-
-      if (outcome.combat_end || !outcome.combat_active) {
-        setCombatState({
-          active: false,
-          enemy: null,
-          enemyHp: 0,
-          enemyMaxHp: 0,
-          log: "",
-        });
-        setMessage(
-          [outcome.action_text, outcome.end_message].filter(Boolean).join("\n") ||
-            "Combat ended."
-        );
-        setEvent(null);
-        return;
-      }
-
-      setCombatState({
-        active: true,
-        enemy: outcome.enemy || gameData.game_state?.current_enemy || "Enemy",
-        enemyHp: outcome.enemy_hp ?? gameData.game_state?.current_enemy_hp ?? 0,
-        enemyMaxHp:
-          outcome.enemy_max_hp ??
-          gameData.game_state?.current_enemy_max_hp ??
-          combatState.enemyMaxHp ??
-          0,
-        log: outcome.action_text || "Attack resolved.",
-      });
-      setMessage("");
-    } catch (error) {
-      console.error("Error during combat:", error);
+      // Update combat state
       setCombatState((prev) => ({
         ...prev,
-        log: "Error during combat action.",
+        enemy: result.enemy,
+        enemyHp: result.enemy_hp,
+        enemyMaxHp: result.enemy_max_hp,
+        log: result.combat_log ? result.combat_log.join("\n") : "",
+        combatLog: result.combat_log || [],
+        active: result.combat_active,
+      }));
+
+      // Update player stats
+      if (result.player_hp !== undefined) {
+        setStats((prev) => ({
+          ...prev,
+          HP: result.player_hp,
+          Mana: result.player_mana,
+        }));
+      }
+
+      // Handle combat end
+      if (result.combat_end) {
+        setTimeout(() => {
+          if (result.game_over) {
+            setMessage("💀 Game Over. You have been defeated...");
+            setMode("event");
+          } else {
+            setMessage(result.end_message);
+            setCombatState((prev) => ({
+              ...prev,
+              active: false,
+            }));
+            setMode("event");
+          }
+        }, 1500);
+      }
+
+      // Handle level up
+      if (result.is_level_up) {
+        setLevelUpData(result);
+        setShowLevelUp(true);
+      }
+    } catch (err) {
+      console.error("Combat error:", err);
+      setCombatState((prev) => ({
+        ...prev,
+        log: "❌ Error during combat. Please try again.",
       }));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLevelUpContinue = async () => {
-    setShowLevelUp(false);
-    const combinedMessage = [levelUpData?.text, levelUpData?.level_up_text]
-      .filter(Boolean)
-      .join("\n\n");
+  const handleEquipWeapon = async (weaponName) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/equip-weapon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weapon: weaponName }),
+      });
 
-    if (combinedMessage) {
-      setMessage(combinedMessage);
+      const result = await response.json();
+      if (result.success) {
+        setEquipment((prev) => ({
+          ...prev,
+          weapon: result.equipped_weapon,
+        }));
+      }
+    } catch (err) {
+      console.error("Equip error:", err);
     }
-
-    await syncGameData();
   };
 
-  const eventTitle = combatState.active
-    ? `⚔️ ${String(combatState.enemy || "Enemy").toUpperCase()}`
-    : event?.event_name
-      ? event.event_name.replace("trigger_", "").replace(/_/g, " ").toUpperCase()
-      : "ADVENTURE";
+  const handleEquipSpell = async (spellName) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/equip-spell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spell: spellName }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setEquipment((prev) => ({
+          ...prev,
+          spell: result.equipped_spell,
+        }));
+      }
+    } catch (err) {
+      console.error("Equip error:", err);
+    }
+  };
+
+  const endBowlingGame = async () => {
+    const finalScore = bowlingState.score;
+
+    await fetch("http://localhost:5000/api/end-minigame", {
+      method: "POST",
+    });
+
+    setStats((prev) => ({
+      ...prev,
+      XP: prev.XP + finalScore,
+    }));
+
+    setBowlingState({
+      active: false,
+      score: 0,
+      rolls: 0,
+      rollsRemaining: 5,
+      lastRoll: null,
+      rollHistory: [],
+    });
+
+    setMode("event");
+
+    setMessage(`Bowling complete, Score: ${finalScore}`);
+  };
+
+  const rollBowlingBall = () => {
+    setBowlingState((prev) => {
+      if (!prev.active || prev.rollsRemaining <= 0) {
+        return prev;
+      }
+
+      const knockedDown = Math.floor(Math.random() * 10) + 1;
+      return {
+        ...prev,
+        score: prev.score + knockedDown,
+        rolls: prev.rolls + 1,
+        rollsRemaining: prev.rollsRemaining - 1,
+        lastRoll: knockedDown,
+        rollHistory: [...prev.rollHistory, knockedDown],
+      };
+    });
+  };
+
+  const renderContent = () => {
+    if (bowlingState.active) {
+      return (
+        <div className="event-display">
+          <h2>🎳 Bowling</h2>
+          <p>Score: {bowlingState.score}</p>
+          <p>Rolls: {bowlingState.rolls} / 5</p>
+          {bowlingState.lastRoll !== null && (
+            <p>Last roll: {bowlingState.lastRoll} pins</p>
+          )}
+          <p>
+            {bowlingState.rollsRemaining > 0
+              ? `Roll the ball and knock down as many pins as you can.`
+              : "No rolls left. Finish your game to collect XP."}
+          </p>
+
+          <button
+            className="choice-btn"
+            onClick={rollBowlingBall}
+            disabled={bowlingState.rollsRemaining <= 0}
+          >
+            Roll Ball
+          </button>
+
+          <button className="choice-btn" onClick={endBowlingGame}>
+            Finish
+          </button>
+
+          {bowlingState.rollHistory.length > 0 && (
+            <div className="bowling-history">
+              <h4>Roll history</h4>
+              <p>{bowlingState.rollHistory.join(" - ")}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (combatState.active) {
+      return (
+        <CombatScreen
+          combatState={combatState}
+          stats={stats}
+          equipment={equipment}
+          availableWeapons={combatState.availableWeapons}
+          availableSpells={combatState.availableSpells}
+          onAttack={handleCombatAttack}
+          onEquipWeapon={handleEquipWeapon}
+          onEquipSpell={handleEquipSpell}
+          loading={loading}
+        />
+      );
+    }
+
+    if (loading && !event) {
+      return <p>Loading...</p>;
+    }
+
+    if (message) {
+      return (
+        <div className="message-display">
+          <p>{message}</p>
+          <button
+            className="choice-btn"
+            onClick={triggerEvent}
+            disabled={loading}
+          >
+            Continue
+          </button>
+        </div>
+      );
+    }
+
+    if (event) {
+      return (
+        <div className="event-display">
+          <h2>{formatEventName(event.event_name)}</h2>
+          <p>{event.text}</p>
+          {Array.isArray(event.choices) && event.choices.length > 0 && (
+            <div className="choices">
+              {event.choices.map((choice, index) => (
+                <button
+                  key={index}
+                  className="choice-btn"
+                  onClick={() => handleChoice(choice)}
+                  disabled={loading}
+                >
+                  {choice}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return <p>Loading...</p>;
+  };
+
+  const renderEquipPanel = () => {
+    if (combatState.active || mode === "bowling") return null;
+
+    const hasWeapons = availableGear.weapons.length > 0;
+    const hasSpells = availableGear.spells.length > 0;
+    if (!hasWeapons && !hasSpells) return null;
+
+    return (
+      <div className="equip-panel">
+        <h4>Equip on Main Screen</h4>
+        <div className="equip-row">
+          {hasWeapons && (
+            <div className="equip-group">
+              <label htmlFor="weapon-select">Weapon</label>
+              <select
+                id="weapon-select"
+                value={equipment.weapon || "Fist"}
+                onChange={(e) => handleEquipWeapon(e.target.value)}
+                disabled={loading}
+                className="equip-select"
+              >
+                {availableGear.weapons.map((weapon) => (
+                  <option key={weapon} value={weapon}>
+                    {weapon}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {hasSpells && (
+            <div className="equip-group">
+              <label htmlFor="spell-select">Spell</label>
+              <select
+                id="spell-select"
+                value={equipment.spell || ""}
+                onChange={(e) => handleEquipSpell(e.target.value || null)}
+                disabled={loading}
+                className="equip-select"
+              >
+                <option value="">None</option>
+                {availableGear.spells.map((spell) => (
+                  <option key={spell} value={spell}>
+                    {spell}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="game-screen">
+      <div className="game-content">
+        <div className="event-box">{renderContent()}</div>
+        {renderEquipPanel()}
+      </div>
       {showLevelUp && levelUpData && (
         <LevelUpScreen
-          newLevel={levelUpData.new_level}
-          statIncreases={levelUpData.stat_increases}
-          newStats={levelUpData.new_stats}
-          onContinue={handleLevelUpContinue}
+          levelUpData={levelUpData}
+          onClose={() => setShowLevelUp(false)}
         />
       )}
-
-      <div className="game-content">
-        <div className="stats-bar">
-          <div className="stat-badge">
-            <span className="stat-emoji">⭐</span>
-            <span className="stat-label">Lvl</span>
-            <span className="stat-val">{stats.Level}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">💎</span>
-            <span className="stat-label">XP</span>
-            <span className="stat-val">{stats.XP}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">❤️</span>
-            <span className="stat-label">HP</span>
-            <span className="stat-val">{stats.HP}/{stats.max_HP}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">🔷</span>
-            <span className="stat-label">Mana</span>
-            <span className="stat-val">{stats.Mana}/{stats.max_Mana ?? stats.Mana}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">💪</span>
-            <span className="stat-label">Str</span>
-            <span className="stat-val">{stats.Strength}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">🛡️</span>
-            <span className="stat-label">Def</span>
-            <span className="stat-val">{stats.Defense}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">✨</span>
-            <span className="stat-label">Mag</span>
-            <span className="stat-val">{stats.Magic}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">🎯</span>
-            <span className="stat-label">Dex</span>
-            <span className="stat-val">{stats.Dexterity}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">⚡</span>
-            <span className="stat-label">Spd</span>
-            <span className="stat-val">{stats.Speed}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">🌊</span>
-            <span className="stat-label">Swim</span>
-            <span className="stat-val">{stats.Swim}</span>
-          </div>
-
-          <div className="stat-badge">
-            <span className="stat-emoji">🧠</span>
-            <span className="stat-label">Int</span>
-            <span className="stat-val">{stats.Intellect}</span>
-          </div>
-
-          <button className="mini-btn" onClick={onShowStats}>
-            Full Stats
-          </button>
-        </div>
-
-        <div className="event-box">
-          {combatState.active ? (
-            <div className="event-display combat-display">
-              <h2>{eventTitle}</h2>
-              <p className="event-text enemy-health">
-                Enemy HP: {combatState.enemyHp}/{combatState.enemyMaxHp}
-              </p>
-              <p className="event-text combat-log">{combatState.log}</p>
-            </div>
-          ) : message ? (
-            <div className="message-display">
-              <p>{message}</p>
-            </div>
-          ) : event ? (
-            <div className="event-display">
-              <h2>{eventTitle}</h2>
-              <p className="event-text">{event.text}</p>
-            </div>
-          ) : (
-            <p>Loading...</p>
-          )}
-        </div>
-
-        {combatState.active ? (
-          <div className="choices combat-actions">
-            <button
-              className="choice-btn"
-              onClick={() => handleCombatAction("weapon")}
-              disabled={loading}
-            >
-              ⚔️ Attack with {equipment.weapon}
-            </button>
-
-            {equipment.spell && (
-              <button
-                className="choice-btn"
-                onClick={() => handleCombatAction("spell")}
-                disabled={loading}
-              >
-                ✨ Cast {equipment.spell}
-              </button>
-            )}
-          </div>
-        ) : !message && event && Array.isArray(event.choices) ? (
-          <div className="choices">
-            {event.choices.map((choice, idx) => (
-              <button
-                key={idx}
-                className="choice-btn"
-                onClick={() => handleChoice(choice)}
-                disabled={loading}
-              >
-                {choice}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        {message && !combatState.active && (
-          <div className="choices">
-            <button className="choice-btn" onClick={triggerEvent} disabled={loading}>
-              Continue...
-            </button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
